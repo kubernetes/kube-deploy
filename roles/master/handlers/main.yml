@@ -23,3 +23,6 @@
 
 - name: restart iptables
   service: name=iptables state=restarted
+
+- name: restart kubelet
+  service: name=kubelet state=restarted

@@ -1,0 +1,8 @@
+{
+  "kubelet": {
+    "api-servers": "https://172.20.0.9",
+    "cloud-provider": "aws",
+    "cgroup-root": "docker",
+    "non-masquerade-cidr": "10.0.0.0/8"
+  }
+}

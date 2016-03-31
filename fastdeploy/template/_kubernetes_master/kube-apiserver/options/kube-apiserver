@@ -1,0 +1,24 @@
+{
+  "kubeapiserver": {
+    "secure_port": 443,
+    "srv_kube_path": "/srv/kubernetes",
+    "srv_sshproxy_path": "/srv/sshproxy",
+    "kube_docker_registry": "gcr.io/google_containers",
+    "docker_tag": "v1.2.0",
+    "flags": {
+      "address": "127.0.0.1",
+      "etcd-servers": "http://127.0.0.1:4001",
+      "etcd-servers-overrides": "/events#http://127.0.0.1:4002",
+      "admission-control": "NamespaceLifecycle,LimitRanger,ServiceAccount,ResourceQuota,PersistentVolumeLabel",
+      "service-cluster-ip-range": "10.0.0.0/16",
+      "client-ca-file": "/srv/kubernetes/ca.crt",
+      "basic-auth-file": "/srv/kubernetes/basic_auth.csv",
+      "tls-cert-file": "/srv/kubernetes/server.cert",
+      "tls-private-key-file": "/srv/kubernetes/server.key",
+      "secure-port": 443,
+      "token-auth-file": "/srv/kubernetes/known_tokens.csv",
+      "v": 2,
+      "allow-privileged": true
+    }
+  }
+}

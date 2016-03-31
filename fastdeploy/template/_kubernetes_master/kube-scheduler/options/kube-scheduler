@@ -1,0 +1,12 @@
+{
+  "kubescheduler": {
+    "srv_kube_path": "/srv/kubernetes",
+    "srv_sshproxy_path": "/srv/sshproxy",
+    "kube_docker_registry": "gcr.io/google_containers",
+    "docker_tag": "v1.2.0",
+    "flags": {
+      "master": "127.0.0.1:8080",
+      "v": 2
+    }
+  }
+}

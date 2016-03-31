@@ -1,0 +1,17 @@
+{
+  "kubecontrollermanager": {
+    "secure_port": 443,
+    "srv_kube_path":  "/srv/kubernetes",
+    "kube_docker_registry": "gcr.io/google_containers",
+    "docker_tag": "v1.2.0",
+    "flags": {
+      "master": "127.0.0.1:8080",
+      "cluster-name": "kubernetes",
+      "cluster-cidr": "10.244.0.0/16",
+      "allocate-node-cidrs": true,
+      "service-account-private-key-file": "/srv/kubernetes/server.key",
+      "v": 2,
+      "root-ca-file": "/srv/kubernetes/ca.crt"
+    }
+  }
+}

@@ -1,0 +1,1 @@
+{{ base64decode .Options.CA_CERT }}

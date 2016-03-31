@@ -1,0 +1,7 @@
+{
+  "kubecontrollermanager": {
+    "flags": {
+      "cloud-provider": "gce"
+    }
+  }
+}

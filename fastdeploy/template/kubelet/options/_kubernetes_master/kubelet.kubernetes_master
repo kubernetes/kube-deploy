@@ -1,0 +1,9 @@
+{
+  "kubelet": {
+    "register-schedulable": "false",
+    "reconcile-cidr": "false",
+    "enable-debugging-handlers": "false",
+    "hairpin-mode": "none",
+    "pod-cidr": "10.123.45.0/30"
+  }
+}

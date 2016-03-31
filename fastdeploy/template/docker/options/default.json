@@ -1,0 +1,8 @@
+{
+  "docker": {
+    "bridge": "cbr0",
+    "log-level": "warn",
+    "iptables": "false",
+    "ip-masq": "false"
+  }
+}

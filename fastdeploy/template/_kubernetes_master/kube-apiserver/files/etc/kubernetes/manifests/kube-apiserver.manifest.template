@@ -1,0 +1,100 @@
+{
+"apiVersion": "v1",
+"kind": "Pod",
+"metadata": {
+  "name":"kube-apiserver",
+  "namespace": "kube-system"
+},
+"spec":{
+"hostNetwork": true,
+"containers":[
+    {
+    "name": "kube-apiserver",
+    "image": "{{ .Options.kubeapiserver.kube_docker_registry }}/kube-apiserver:{{ .Options.kubeapiserver.docker_tag }}",
+    "resources": {
+      "requests": {
+        "cpu": "250m"
+      }
+    },
+    "command": [
+                 "/bin/sh",
+                 "-c",
+                 "/usr/local/bin/kube-apiserver {{ .Options.BuildFlags "kubeapiserver.flags" }} 1>>/var/log/kube-apiserver.log 2>&1"
+               ],
+    "livenessProbe": {
+      "httpGet": {
+        "host": "127.0.0.1",
+        "port": 8080,
+        "path": "/healthz"
+      },
+      "initialDelaySeconds": 15,
+      "timeoutSeconds": 15
+    },
+    "ports":[
+      { "name": "https",
+        "containerPort": {{ .Options.kubeapiserver.secure_port }},
+        "hostPort": {{ .Options.kubeapiserver.secure_port  }} },{
+       "name": "local",
+        "containerPort": 8080,
+        "hostPort": 8080}
+        ],
+    "volumeMounts": [
+        {"name": "usrsharessl","mountPath": "/usr/share/ssl", "readOnly": true}, {"name": "usrssl","mountPath": "/usr/ssl", "readOnly": true}, {"name": "usrlibssl","mountPath": "/usr/lib/ssl", "readOnly": true}, {"name": "usrlocalopenssl","mountPath": "/usr/local/openssl", "readOnly": true},
+
+        { "name": "srvkube",
+        "mountPath": "{{ .Options.kubeapiserver.srv_kube_path }}",
+        "readOnly": true},
+        { "name": "logfile",
+        "mountPath": "/var/log/kube-apiserver.log",
+        "readOnly": false},
+        { "name": "etcssl",
+        "mountPath": "/etc/ssl",
+        "readOnly": true},
+        { "name": "varssl",
+        "mountPath": "/var/ssl",
+        "readOnly": true},
+        { "name": "etcopenssl",
+        "mountPath": "/etc/openssl",
+        "readOnly": true},
+        { "name": "etcpkitls",
+        "mountPath": "/etc/pki/tls",
+        "readOnly": true},
+        { "name": "srvsshproxy",
+        "mountPath": "{{ .Options.kubeapiserver.srv_sshproxy_path }}",
+        "readOnly": false}
+      ]
+    }
+],
+"volumes":[
+  {"name": "usrsharessl","hostPath": {"path": "/usr/share/ssl"}}, {"name": "usrssl","hostPath": {"path": "/usr/ssl"}}, {"name": "usrlibssl","hostPath": {"path": "/usr/lib/ssl"}}, {"name": "usrlocalopenssl","hostPath": {"path": "/usr/local/openssl"}},
+
+  { "name": "srvkube",
+    "hostPath": {
+        "path": "{{ .Options.kubeapiserver.srv_kube_path }}"}
+  },
+  { "name": "logfile",
+    "hostPath": {
+        "path": "/var/log/kube-apiserver.log"}
+  },
+  { "name": "etcssl",
+    "hostPath": {
+        "path": "/etc/ssl"}
+  },
+  { "name": "varssl",
+    "hostPath": {
+        "path": "/var/ssl"}
+  },
+  { "name": "etcopenssl",
+    "hostPath": {
+        "path": "/etc/openssl"}
+  },
+  { "name": "etcpkitls",
+    "hostPath": {
+        "path": "/etc/pki/tls"}
+  },
+  { "name": "srvsshproxy",
+    "hostPath": {
+        "path": "{{ .Options.kubeapiserver.srv_sshproxy_path }}"}
+  }
+]
+}}

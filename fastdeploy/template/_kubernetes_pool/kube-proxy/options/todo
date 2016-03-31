@@ -1,0 +1,11 @@
+{
+  "kubeproxy": {
+    "cpurequest": "200m",
+    "kube_docker_registry": "gcr.io/google_containers",
+    "docker_tag": "v1.2.0",
+    "flags": {
+      "master": "https://kubernetes-master",
+      "v": "2"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "kubelet": {
+    "enable-debugging-handlers": "true",
+    "config": "/etc/kubernetes/manifests",
+    "allow-privileged": "True",
+    "v": "2",
+    "cluster-dns": "10.0.0.10",
+    "cluster-domain": "cluster.local",
+    "configure-cbr0": "true",
+    "babysit-daemons": "true"
+  }
+}

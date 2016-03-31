@@ -1,0 +1,10 @@
+{{ .Options.KUBE_BEARER_TOKEN }},admin,admin
+{{ .Options.KUBELET_TOKEN }},kubelet,kubelet
+{{ .Options.KUBE_PROXY_TOKEN }},kube-proxy,kube-proxy
+
+{{ .Options.Token "system:scheduler" }},system:scheduler,system:scheduler
+{{ .Options.Token "system:controller_manager" }},system:controller_manager,system:controller_manager
+{{ .Options.Token "system:logging" }},system:logging,system:logging
+{{ .Options.Token "system:monitoring" }},system:monitoring,system:monitoring
+{{ .Options.Token "system:dns" }},system:dns,system:dns
+

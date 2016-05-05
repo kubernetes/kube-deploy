@@ -15,41 +15,45 @@
 # limitations under the License.
 
 # Utility functions for Kubernetes in docker setup
-# Authors @luxas @wizard_cxy @resouer @loopingz 
+# Author @luxas
 
-# Variables
-K8S_VERSION=${K8S_VERSION:-"1.2.0-alpha.8"}
-ETCD_VERSION=${ETCD_VERSION:-"2.2.1"}
-FLANNEL_VERSION=${FLANNEL_VERSION:-"0.5.5"}
-FLANNEL_IFACE=${FLANNEL_IFACE:-"eth0"}
-FLANNEL_IPMASQ=${FLANNEL_IPMASQ:-"true"}
-FLANNEL_BACKEND=${FLANNEL_BACKEND:-"vxlan"}
-FLANNEL_NETWORK=${FLANNEL_NETWORK:-"10.1.0.0/16"}
-DNS_DOMAIN=${DNS_DOMAIN:-"cluster.local"}
-DNS_SERVER_IP=${DNS_SERVER_IP:-"10.0.0.10"}
-RESTART_POLICY=${RESTART_POLICY:-"on-failure"}
-ARCH=${ARCH:-"amd64"}
 
-# Constants
-TIMEOUT_FOR_SERVICES=20
-BOOTSTRAP_DOCKER_SOCK="unix:///var/run/docker-bootstrap.sock"
-KUBELET_MOUNTS="\
-  -v /sys:/sys:ro \
-  -v /var/run:/var/run:rw \
-  -v /:/rootfs:ro \
-  -v /var/lib/docker/:/var/lib/docker:rw \
-  -v /var/lib/kubelet/:/var/lib/kubelet:rw"
+kube::multinode::main(){
+  LATEST_STABLE_K8S_VERSION=$(kube::helpers::curl "https://storage.googleapis.com/kubernetes-release/release/stable.txt")
+  K8S_VERSION=${K8S_VERSION:-${LATEST_STABLE_K8S_VERSION}}
 
-# Paths
-FLANNEL_SUBNET_TMPDIR=$(mktemp -d)
-KUBE_ROOT=$(dirname "${BASH_SOURCE}")/../../..
+  ETCD_VERSION=${ETCD_VERSION:-"2.2.5"}
 
-# Source useful scripts
-source "${KUBE_ROOT}/hack/lib/util.sh"
-source "${KUBE_ROOT}/cluster/lib/logging.sh"
+  FLANNEL_VERSION=${FLANNEL_VERSION:-"0.5.5"}
+  FLANNEL_IPMASQ=${FLANNEL_IPMASQ:-"true"}
+  FLANNEL_BACKEND=${FLANNEL_BACKEND:-"udp"}
+  FLANNEL_NETWORK=${FLANNEL_NETWORK:-"10.1.0.0/16"}
 
-# Trap errors
-kube::log::install_errexit
+  DNS_DOMAIN=${DNS_DOMAIN:-"cluster.local"}
+  DNS_SERVER_IP=${DNS_SERVER_IP:-"10.0.0.10"}
+
+  RESTART_POLICY=${RESTART_POLICY:-"on-failure"}
+
+  CURRENT_PLATFORM=$(kube::helpers::host_platform)
+  ARCH=${ARCH:-${CURRENT_PLATFORM##*/}}
+
+  # Constants
+  TIMEOUT_FOR_SERVICES=20
+  BOOTSTRAP_DOCKER_SOCK="unix:///var/run/docker-bootstrap.sock"
+  KUBELET_MOUNTS="\
+    -v /sys:/sys:ro \
+    -v /var/run:/var/run:rw \
+    -v /:/rootfs:ro \
+    -v /var/lib/docker:/var/lib/docker:rw \
+    -v /var/lib/kubelet:/var/lib/kubelet:rw \
+    -v /var/log/containers:/var/log/containers:rw"
+
+  # Paths
+  FLANNEL_SUBNET_TMPDIR=$(mktemp -d)
+
+  # Trap errors
+  kube::log::install_errexit
+}
 
 # Ensure everything is OK, docker is running and we're root
 kube::multinode::check_params() {
@@ -70,7 +74,6 @@ kube::multinode::check_params() {
   kube::log::status "K8S_VERSION is set to: ${K8S_VERSION}"
   kube::log::status "ETCD_VERSION is set to: ${ETCD_VERSION}"
   kube::log::status "FLANNEL_VERSION is set to: ${FLANNEL_VERSION}"
-  kube::log::status "FLANNEL_IFACE is set to: ${FLANNEL_IFACE}"
   kube::log::status "FLANNEL_IPMASQ is set to: ${FLANNEL_IPMASQ}"
   kube::log::status "FLANNEL_NETWORK is set to: ${FLANNEL_NETWORK}"
   kube::log::status "FLANNEL_BACKEND is set to: ${FLANNEL_BACKEND}"
@@ -84,16 +87,6 @@ kube::multinode::check_params() {
 
 # Detect the OS distro, we support ubuntu, debian, mint, centos, fedora and systemd dist
 kube::multinode::detect_lsb() {
-
-  # TODO(luxas): add support for arm, arm64 and ppc64le
-  case "$(kube::util::host_platform)" in
-    linux/amd64)
-      ;;
-    *)
-      kube::log::error "Error: We currently only support the linux/amd64 platform."
-      exit 1
-      ;;
-  esac
 
   if kube::helpers::command_exists lsb_release; then
     lsb_dist="$(lsb_release -si)"
@@ -139,10 +132,10 @@ kube::multinode::bootstrap_daemon() {
       1> /dev/null &
 
   # Wait for docker bootstrap to start by "docker ps"-ing every second
-  local BOOTSTRAP_SECONDS=0
+  local SECONDS=0
   while [[ $(docker -H ${BOOTSTRAP_DOCKER_SOCK} ps 2>&1 1>/dev/null; echo $?) != 0 ]]; do
-    ((BOOTSTRAP_SECONDS++))
-    if [[ ${BOOTSTRAP_SECONDS} == ${TIMEOUT_FOR_SERVICES} ]]; then
+    ((SECONDS++))
+    if [[ ${SECONDS} == ${TIMEOUT_FOR_SERVICES} ]]; then
       kube::log::error "docker bootstrap failed to start. Exiting..."
       exit
     fi
@@ -183,24 +176,22 @@ kube::multinode::start_flannel() {
 
   kube::log::status "Launching flannel..."
 
-  docker -H ${BOOTSTRAP_DOCKER_SOCK} run \
+  docker -H ${BOOTSTRAP_DOCKER_SOCK} run -d \
     --restart=${RESTART_POLICY} \
-    -d \
     --net=host \
     --privileged \
     -v /dev/net:/dev/net \
     -v ${FLANNEL_SUBNET_TMPDIR}:/run/flannel \
-    quay.io/coreos/flannel:${FLANNEL_VERSION} \
+    gcr.io/google_containers/flannel-${ARCH}:${FLANNEL_VERSION} \
     /opt/bin/flanneld \
       --etcd-endpoints=http://${MASTER_IP}:4001 \
-      --ip-masq="${FLANNEL_IPMASQ}" \
-      --iface="${FLANNEL_IFACE}"
+      --ip-masq="${FLANNEL_IPMASQ}"
 
   # Wait for the flannel subnet.env file to be created instead of a timeout. This is faster and more reliable
-  local FLANNEL_SECONDS=0
+  local SECONDS=0
   while [[ ! -f ${FLANNEL_SUBNET_TMPDIR}/subnet.env ]]; do
-    ((FLANNEL_SECONDS++))
-    if [[ ${FLANNEL_SECONDS} == 20 ]]; then
+    ((SECONDS++))
+    if [[ ${SECONDS} == ${TIMEOUT_FOR_SERVICES} ]]; then
       kube::log::error "flannel failed to start. Exiting..."
       exit
     fi
@@ -230,20 +221,25 @@ kube::multinode::restart_docker(){
       service docker restart
       ;;
     centos)
-      DOCKER_CONF="/etc/sysconfig/docker"
+      # Newer centos releases uses systemd. Handle that
+      if kube::helpers::command_exists systemctl; then
+        kube::multinode::restart_docker_systemd
+      else
+        DOCKER_CONF="/etc/sysconfig/docker"
 
-      kube::helpers::file_replace_line ${DOCKER_CONF} \ # Replace content in this file
-        "--bip" \ # Find a line with this content...
-        "OPTIONS=\"\$OPTIONS --mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET}\"" # ...and replace the found line with this line
-      
-      if ! kube::helpers::command_exists ifconfig; then
-          yum -y -q install net-tools
+        kube::helpers::file_replace_line ${DOCKER_CONF} \ # Replace content in this file
+          "--bip" \ # Find a line with this content...
+          "OPTIONS=\"\$OPTIONS --mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET}\"" # ...and replace the found line with this line
+        
+        if ! kube::helpers::command_exists ifconfig; then
+            yum -y -q install net-tools
+        fi
+
+        yum -y -q install bridge-utils
+        ifconfig docker0 down
+        brctl delbr docker0 
+        systemctl restart docker
       fi
-
-      yum -y -q install bridge-utils
-      ifconfig docker0 down
-      brctl delbr docker0 
-      systemctl restart docker
       ;;
     ubuntu|debian)
       # Newer ubuntu and debian releases uses systemd. Handle that
@@ -259,7 +255,7 @@ kube::multinode::restart_docker(){
         apt-get install -y bridge-utils 
         brctl delbr docker0 
         service docker stop
-        while [ $(ps aux | grep /usr/bin/docker | grep -v grep | wc -l) -gt 0 ]; do
+        while [[ $(ps aux | grep /usr/bin/docker | grep -v grep | wc -l) -gt 0 ]]; do
             kube::log::status "Waiting for docker to terminate"
             sleep 1
         done
@@ -269,10 +265,6 @@ kube::multinode::restart_docker(){
     systemd)
       kube::multinode::restart_docker_systemd
       ;;
-    *)
-        kube::log::error "Unsupported operations system ${lsb_dist}"
-        exit 1
-        ;;
   esac
 
   kube::log::status "Restarted docker with the new flannel settings"
@@ -313,7 +305,7 @@ kube::multinode::start_k8s_master() {
     ${KUBELET_MOUNTS} \
     gcr.io/google_containers/hyperkube-${ARCH}:v${K8S_VERSION} \
     /hyperkube kubelet \
-      --allow-privileged=true \
+      --allow-privileged \
       --api-servers=http://localhost:8080 \
       --config=/etc/kubernetes/manifests-multi \
       --cluster-dns=${DNS_SERVER_IP} \
@@ -410,6 +402,7 @@ kube::multinode::turndown(){
   fi
 }
 
+
 ## Helpers
 
 # Check if a command is valid
@@ -434,4 +427,142 @@ kube::helpers::is_running(){
   else
     echo "false"
   fi
+}
+
+# Wraps curl or wget in a helper function.
+# Output is redirected to stdout
+kube::helpers::curl(){
+  if [[ $(which curl 2>&1) ]]; then
+    curl -sSL $1
+  elif [[ $(which wget 2>&1) ]]; then
+    wget -qO- $1
+  else
+    kube::log::error "Couldn't find curl or wget. Bailing out."
+    exit 4
+  fi
+}
+
+# This figures out the host platform without relying on golang. We need this as
+# we don't want a golang install to be a prerequisite to building yet we need
+# this info to figure out where the final binaries are placed.
+kube::helpers::host_platform() {
+  local host_os
+  local host_arch
+  case "$(uname -s)" in
+    Linux)
+      host_os=linux;;
+    *)
+      kube::log::error "Unsupported host OS. Must be linux."
+      exit 1;;
+  esac
+
+  case "$(uname -m)" in
+    x86_64*)
+      host_arch=amd64;;
+    i?86_64*)
+      host_arch=amd64;;
+    amd64*)
+      host_arch=amd64;;
+    aarch64*)
+      host_arch=arm64;;
+    arm64*)
+      host_arch=arm64;;
+    arm*)
+      host_arch=arm;;
+    ppc64le*)
+      host_arch=ppc64le;;
+    *)  
+      kube::log::error "Unsupported host arch. Must be x86_64, arm, arm64 or ppc64le."
+      exit 1;;
+  esac
+  echo "${host_os}/${host_arch}"
+}
+
+# Print a status line. Formatted to show up in a stream of output.
+kube::log::status() {
+  timestamp=$(date +"[%m%d %H:%M:%S]")
+  echo "+++ $timestamp $1"
+  shift
+  for message; do
+    echo "    $message"
+  done
+}
+
+# Handler for when we exit automatically on an error.
+# Borrowed from https://gist.github.com/ahendrix/7030300
+kube::log::errexit() {
+  local err="${PIPESTATUS[@]}"
+
+  # If the shell we are in doesn't have errexit set (common in subshells) then
+  # don't dump stacks.
+  set +o | grep -qe "-o errexit" || return
+
+  set +o xtrace
+  local code="${1:-1}"
+  kube::log::error_exit "'${BASH_COMMAND}' exited with status $err" "${1:-1}" 1
+}
+
+kube::log::install_errexit() {
+  # trap ERR to provide an error handler whenever a command exits nonzero  this
+  # is a more verbose version of set -o errexit
+  trap 'kube::log::errexit' ERR
+
+  # setting errtrace allows our ERR trap handler to be propagated to functions,
+  # expansions and subshells
+  set -o errtrace
+}
+
+# Print out the stack trace
+#
+# Args:
+#   $1 The number of stack frames to skip when printing.
+kube::log::stack() {
+  local stack_skip=${1:-0}
+  stack_skip=$((stack_skip + 1))
+  if [[ ${#FUNCNAME[@]} -gt $stack_skip ]]; then
+    echo "Call stack:" >&2
+    local i
+    for ((i=1 ; i <= ${#FUNCNAME[@]} - $stack_skip ; i++))
+    do
+      local frame_no=$((i - 1 + stack_skip))
+      local source_file=${BASH_SOURCE[$frame_no]}
+      local source_lineno=${BASH_LINENO[$((frame_no - 1))]}
+      local funcname=${FUNCNAME[$frame_no]}
+      echo "  $i: ${source_file}:${source_lineno} ${funcname}(...)" >&2
+    done
+  fi
+}
+
+# Log an error and exit.
+# Args:
+#   $1 Message to log with the error
+#   $2 The error code to return
+#   $3 The number of stack frames to skip when printing.
+kube::log::error_exit() {
+  local message="${1:-}"
+  local code="${2:-1}"
+  local stack_skip="${3:-0}"
+  stack_skip=$((stack_skip + 1))
+
+  local source_file=${BASH_SOURCE[$stack_skip]}
+  local source_line=${BASH_LINENO[$((stack_skip - 1))]}
+  echo "!!! Error in ${source_file}:${source_line}" >&2
+  [[ -z ${1-} ]] || {
+    echo "  ${1}" >&2
+  }
+
+  kube::log::stack $stack_skip
+
+  echo "Exiting with status ${code}" >&2
+  exit "${code}"
+}
+
+# Log an error but keep going.  Don't dump the stack or exit.
+kube::log::error() {
+  timestamp=$(date +"[%m%d %H:%M:%S]")
+  echo "!!! $timestamp ${1-}" >&2
+  shift
+  for message; do
+    echo "    $message" >&2
+  done
 }

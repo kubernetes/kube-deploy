@@ -8,7 +8,7 @@ metadata:
     version: v8
     kubernetes.io/cluster-service: "true"
 spec:
-  replicas: {{ pillar['dns_replicas'] }}
+  replicas: DNS_REPLICAS
   selector:
     k8s-app: kube-dns
     version: v8
@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: etcd
-        image: gcr.io/google_containers/etcd:2.0.9
+        image: gcr.io/google_containers/etcd-ARCH:2.2.5
         resources:
           limits:
             cpu: 100m
@@ -40,17 +40,16 @@ spec:
         - name: etcd-storage
           mountPath: /var/etcd/data
       - name: kube2sky
-        image: gcr.io/google_containers/kube2sky:1.11
+        image: gcr.io/google_containers/kube2sky-ARCH:1.15
         resources:
           limits:
             cpu: 100m
             memory: 50Mi
         args:
         # command = "/kube2sky"
-        - -domain={{ pillar['dns_domain'] }}
-        - -kube_master_url=http://{kube_server_url}:8080
+        - -domain=DNS_DOMAIN
       - name: skydns
-        image: gcr.io/google_containers/skydns:2015-03-11-001
+        image: gcr.io/google_containers/skydns-ARCH:1.0
         resources:
           limits:
             cpu: 100m
@@ -59,7 +58,7 @@ spec:
         # command = "/skydns"
         - -machines=http://localhost:4001
         - -addr=0.0.0.0:53
-        - -domain={{ pillar['dns_domain'] }}.
+        - -domain=DNS_DOMAIN.
         ports:
         - containerPort: 53
           name: dns
@@ -75,13 +74,13 @@ spec:
           initialDelaySeconds: 30
           timeoutSeconds: 5
       - name: healthz
-        image: gcr.io/google_containers/exechealthz:1.0
+        image: gcr.io/google_containers/exechealthz-ARCH:1.0
         resources:
           limits:
             cpu: 10m
             memory: 20Mi
         args:
-        - -cmd=nslookup kubernetes.default.svc.{{ pillar['dns_domain'] }} localhost >/dev/null
+        - -cmd=nslookup kubernetes.default.svc.DNS_DOMAIN localhost >/dev/null
         - -port=8080
         ports:
         - containerPort: 8080
@@ -103,7 +102,7 @@ metadata:
 spec:
   selector:
     k8s-app: kube-dns
-  clusterIP:  {{ pillar['dns_server'] }}
+  clusterIP: DNS_SERVER_IP
   ports:
   - name: dns
     port: 53

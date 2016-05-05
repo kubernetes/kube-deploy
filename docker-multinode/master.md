@@ -213,18 +213,14 @@ $ chmod 755 kubectl
 $ PATH=$PATH:`pwd`
 ```
 
-Now you can list the nodes:
-
-```sh
-kubectl get nodes
-```
-
-This should print something like:
+Now you can list the nodes, which will output something similar:
 
 ```console
+$ kubectl get nodes
 NAME        LABELS                             STATUS
 127.0.0.1   kubernetes.io/hostname=127.0.0.1   Ready
 ```
+
 
 If the status of the node is `NotReady` or `Unknown` please check that all of the containers you created are successfully running.
 If all else fails, ask questions on [Slack](../../troubleshooting.md#slack).

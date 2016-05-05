@@ -17,6 +17,8 @@
 # Source common.sh
 source $(dirname "${BASH_SOURCE}")/common.sh
 
+kube::multinode::main
+
 # Turndown kubernetes in docker
 kube::multinode::turndown
 

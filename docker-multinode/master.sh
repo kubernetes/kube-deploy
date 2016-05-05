@@ -22,6 +22,8 @@ if [[ -z ${MASTER_IP} ]]; then
   MASTER_IP=$(hostname -I | awk '{print $1}')
 fi
 
+kube::multinode::main
+
 kube::multinode::check_params
 
 kube::multinode::detect_lsb

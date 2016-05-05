@@ -23,6 +23,8 @@ if [[ -z ${MASTER_IP} ]]; then
     exit 1
 fi
 
+kube::multinode::main
+
 kube::multinode::check_params
 
 kube::multinode::detect_lsb

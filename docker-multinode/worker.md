@@ -9,10 +9,11 @@ to run is `${K8S_VERSION}`, which should hold a released version of Kubernetes >
 Enviroinment variables used:
 
 ```sh
+# ARCH may be amd64, arm, arm64 or ppc64le
+export ARCH=amd64
 export MASTER_IP=<the_master_ip_here>
-export K8S_VERSION=<your_k8s_version (e.g. 1.2.0-alpha.6)>
+export K8S_VERSION=<your_k8s_version (e.g. 1.2.4)>
 export FLANNEL_VERSION=<your_flannel_version (e.g. 0.5.5)>
-export FLANNEL_IFACE=<flannel_interface (defaults to eth0)>
 export FLANNEL_IPMASQ=<flannel_ipmasq_flag (defaults to true)>
 ```
 
@@ -26,7 +27,7 @@ For each worker node, there are three steps:
 As before, the Flannel daemon is going to provide network connectivity.
 
 _Note_:
-This guide expects **Docker 1.7.1 or higher**.
+This guide expects **Docker 1.8.3 or higher**.
 
 
 #### Set up a bootstrap docker
@@ -70,11 +71,10 @@ sudo docker -H unix:///var/run/docker-bootstrap.sock run -d \
     --net=host \
     --privileged \
     -v /dev/net:/dev/net \
-    quay.io/coreos/flannel:${FLANNEL_VERSION} \
+    gcr.io/google_containers/flannel-${ARCH}:${FLANNEL_VERSION} \
     /opt/bin/flanneld \
         --ip-masq=${FLANNEL_IPMASQ} \
-        --etcd-endpoints=http://${MASTER_IP}:4001 \
-        --iface=${FLANNEL_IFACE}
+        --etcd-endpoints=http://${MASTER_IP}:4001
 ```
 
 The previous command should have printed a really long hash, the container id, copy this hash.
@@ -130,27 +130,24 @@ systemctl start docker
 Again this is similar to the above, but the `--api-servers` now points to the master we set up in the beginning.
 
 ```sh
-sudo docker run \
+sudo docker run -d \
     --volume=/:/rootfs:ro \
     --volume=/sys:/sys:ro \
     --volume=/dev:/dev \
     --volume=/var/lib/docker/:/var/lib/docker:rw \
     --volume=/var/lib/kubelet/:/var/lib/kubelet:rw \
+    --volume=/var/log/containers:/var/log/containers:rw \
     --volume=/var/run:/var/run:rw \
     --net=host \
-    --privileged=true \
+    --privileged \
     --pid=host \ 
-    -d \
-    gcr.io/google_containers/hyperkube-amd64:v${K8S_VERSION} \
+    gcr.io/google_containers/hyperkube-${ARCH}:v${K8S_VERSION} \
     /hyperkube kubelet \
-        --allow-privileged=true \
         --api-servers=http://${MASTER_IP}:8080 \
-        --v=2 \
-        --address=0.0.0.0 \
-        --enable-server \
         --containerized \
         --cluster-dns=10.0.0.10 \
-        --cluster-domain=cluster.local
+        --cluster-domain=cluster.local \
+        --allow-privileged --v=2 \
 ```
 
 #### Run the service proxy
@@ -161,7 +158,7 @@ The service proxy provides load-balancing between groups of containers defined b
 sudo docker run -d \
     --net=host \
     --privileged \
-    gcr.io/google_containers/hyperkube-amd64:v${K8S_VERSION} \
+    gcr.io/google_containers/hyperkube-${ARCH}:v${K8S_VERSION} \
     /hyperkube proxy \
         --master=http://${MASTER_IP}:8080 \
         --v=2

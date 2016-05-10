@@ -158,7 +158,7 @@ kube::multinode::start_etcd() {
       --data-dir=/var/etcd/data
 
   # Wait for etcd to come up
-  kube::util::wait_for_url "http://localhost:4001/v2/machines" "etcd" 0.25 80
+  sleep 5
 
   # Set flannel net config
   docker -H ${BOOTSTRAP_DOCKER_SOCK} run \
@@ -303,7 +303,7 @@ kube::multinode::start_k8s_master() {
     --privileged \
     --restart=${RESTART_POLICY} \
     ${KUBELET_MOUNTS} \
-    gcr.io/google_containers/hyperkube-${ARCH}:v${K8S_VERSION} \
+    gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
     /hyperkube kubelet \
       --allow-privileged \
       --api-servers=http://localhost:8080 \
@@ -326,7 +326,7 @@ kube::multinode::start_k8s_worker() {
     --privileged \
     --restart=${RESTART_POLICY} \
     ${KUBELET_MOUNTS} \
-    gcr.io/google_containers/hyperkube-${ARCH}:v${K8S_VERSION} \
+    gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
     /hyperkube kubelet \
       --allow-privileged=true \
       --api-servers=http://${MASTER_IP}:8080 \
@@ -344,7 +344,7 @@ kube::multinode::start_k8s_worker_proxy() {
     --net=host \
     --privileged \
     --restart=${RESTART_POLICY} \
-    gcr.io/google_containers/hyperkube-${ARCH}:v${K8S_VERSION} \
+    gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
     /hyperkube proxy \
         --master=http://${MASTER_IP}:8080 \
         --v=2

@@ -2,16 +2,17 @@
 
 We'll begin by setting up the master node.  For the purposes of illustration, we'll assume that the IP of this machine
 is `${MASTER_IP}`.  We'll need to run several versioned Kubernetes components, so we'll assume that the version we want
-to run is `${K8S_VERSION}`, which should hold a released version of Kubernetes >= "1.2.0-alpha.7"
+to run is `${K8S_VERSION}`, which should hold a released version of Kubernetes >= "1.2.0"
 
 Enviroinment variables used:
 
 ```sh
+# ARCH may be amd64, arm, arm64 or ppc64le
+export ARCH=amd64
 export MASTER_IP=<the_master_ip_here>
-export K8S_VERSION=<your_k8s_version (e.g. 1.2.0-alpha.7)>
-export ETCD_VERSION=<your_etcd_version (e.g. 2.2.1)>
+export K8S_VERSION=<your_k8s_version (e.g. 1.2.4)>
+export ETCD_VERSION=<your_etcd_version (e.g. 2.2.5)>
 export FLANNEL_VERSION=<your_flannel_version (e.g. 0.5.5)>
-export FLANNEL_IFACE=<flannel_interface (defaults to eth0)>
 export FLANNEL_IPMASQ=<flannel_ipmasq_flag (defaults to true)>
 ```
 
@@ -23,7 +24,7 @@ There are two main phases to installing the master:
 ## Setting up flanneld and etcd
 
 _Note_:
-This guide expects **Docker 1.7.1 or higher**.
+This guide expects **Docker 1.8.3 or higher**.
 
 ### Setup Docker Bootstrap
 
@@ -49,7 +50,7 @@ Run:
 ```sh
 sudo docker -H unix:///var/run/docker-bootstrap.sock run -d \
     --net=host \
-    gcr.io/google_containers/etcd-amd64:${ETCD_VERSION} \
+    gcr.io/google_containers/etcd-${ARCH}:${ETCD_VERSION} \
     /usr/local/bin/etcd \
         --listen-client-urls=http://127.0.0.1:4001,http://${MASTER_IP}:4001 \
         --advertise-client-urls=http://${MASTER_IP}:4001 \
@@ -61,7 +62,7 @@ Next, you need to set a CIDR range for flannel.  This CIDR should be chosen to b
 ```sh
 sudo docker -H unix:///var/run/docker-bootstrap.sock run \
     --net=host \
-    gcr.io/google_containers/etcd-amd64:${ETCD_VERSION} \
+    gcr.io/google_containers/etcd-${ARCH}:${ETCD_VERSION} \
     etcdctl set /coreos.com/network/config '{ "Network": "10.1.0.0/16" }'
 ```
 
@@ -105,9 +106,8 @@ sudo docker -H unix:///var/run/docker-bootstrap.sock run -d \
     --net=host \
     --privileged \
     -v /dev/net:/dev/net \
-    quay.io/coreos/flannel:${FLANNEL_VERSION} \
-        --ip-masq=${FLANNEL_IPMASQ} \
-        --iface=${FLANNEL_IFACE}
+    gcr.io/google_containers/flannel-${ARCH}:${FLANNEL_VERSION} \
+        --ip-masq=${FLANNEL_IPMASQ}
 ```
 
 The previous command should have printed a really long hash, the container id, copy this hash.
@@ -160,23 +160,21 @@ systemctl start docker
 Ok, now that your networking is set up, you can startup Kubernetes, this is the same as the single-node case, we will use the "main" instance of the Docker daemon for the Kubernetes components.
 
 ```sh
-sudo docker run \
+docker run -d \
     --volume=/:/rootfs:ro \
     --volume=/sys:/sys:ro \
     --volume=/var/lib/docker/:/var/lib/docker:rw \
     --volume=/var/lib/kubelet/:/var/lib/kubelet:rw \
+    --volume=/var/log/containers:/var/log/containers:rw \
     --volume=/var/run:/var/run:rw \
     --net=host \
-    --privileged=true \
+    --privileged \
     --pid=host \
-    -d \
-    gcr.io/google_containers/hyperkube-amd64:v${K8S_VERSION} \
+    gcr.io/google_containers/hyperkube-${ARCH}:v${K8S_VERSION} \
     /hyperkube kubelet \
-        --allow-privileged=true \
+        --allow-privileged \
         --api-servers=http://localhost:8080 \
         --v=2 \
-        --address=0.0.0.0 \
-        --enable-server \
         --hostname-override=127.0.0.1 \
         --config=/etc/kubernetes/manifests-multi \
         --containerized \
@@ -188,43 +186,7 @@ sudo docker run \
 
 ### Test it out
 
-At this point, you should have a functioning 1-node cluster.  Let's test it out!
-
-Download the kubectl binary for `${K8S_VERSION}` (look at the URL in the following links) and make it available by editing your PATH environment variable.
-([OS X/amd64](http://storage.googleapis.com/kubernetes-release/release/v1.2.0-alpha.7/bin/darwin/amd64/kubectl))
-([OS X/386](http://storage.googleapis.com/kubernetes-release/release/v1.2.0-alpha.7/bin/darwin/386/kubectl))
-([linux/amd64](http://storage.googleapis.com/kubernetes-release/release/v1.2.0-alpha.7/bin/linux/amd64/kubectl))
-([linux/386](http://storage.googleapis.com/kubernetes-release/release/v1.2.0-alpha.7/bin/linux/386/kubectl))
-([linux/arm](http://storage.googleapis.com/kubernetes-release/release/v1.2.0-alpha.7/bin/linux/arm/kubectl))
-
-For example, OS X:
-
-```console
-$ wget http://storage.googleapis.com/kubernetes-release/release/v${K8S_VERSION}/bin/darwin/amd64/kubectl
-$ chmod 755 kubectl
-$ PATH=$PATH:`pwd`
-```
-
-Linux:
-
-```console
-$ wget http://storage.googleapis.com/kubernetes-release/release/v${K8S_VERSION}/bin/linux/amd64/kubectl
-$ chmod 755 kubectl
-$ PATH=$PATH:`pwd`
-```
-
-Now you can list the nodes, which will output something similar:
-
-```console
-$ kubectl get nodes
-NAME        LABELS                             STATUS
-127.0.0.1   kubernetes.io/hostname=127.0.0.1   Ready
-```
-
-
-If the status of the node is `NotReady` or `Unknown` please check that all of the containers you created are successfully running.
-If all else fails, ask questions on [Slack](../../troubleshooting.md#slack).
-
+Here you may follow the same steps as [in the docs](http://kubernetes.io/docs/getting-started-guides/docker/#test-it-out)
 
 ### Next steps
 

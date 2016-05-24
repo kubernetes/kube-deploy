@@ -1,6 +1,8 @@
 
 SHELL=/bin/bash
-.SHELLFLAGS="-O extglob -o errexit -o pipefail -o nounset -c"
+
+# TODO: things break with this uncommented
+#.SHELLFLAGS="-O extglob -o errexit -o pipefail -o nounset -c"
 
 .PHONY: config echo-config
 
@@ -16,6 +18,13 @@ endif
 
 CONF_TOOL_VERSION = 4.6
 KCONFIG_FILES = $(shell find . -name 'Kconfig')
+
+
+docker-build:
+	docker build -t kube-min-turnup .
+
+docker-run: docker-build
+	docker run -it --net=host -v `pwd`:/opt/kube-min-turnup kube-min-turnup /bin/bash
 
 default:
 	$(MAKE) config

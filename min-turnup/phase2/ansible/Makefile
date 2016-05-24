@@ -1,5 +1,6 @@
 TAG=v1
-IMAGE=gcr.io/mikedanese-k8s/install-k8s
+#IMAGE=gcr.io/mikedanese-k8s/install-k8s
+IMAGE=docker.io/colemickens/install-k8s
 
 build:
 	docker build -t "$(IMAGE):$(TAG)" .

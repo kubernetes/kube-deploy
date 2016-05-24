@@ -1,0 +1,12 @@
+Things:
+
+1. Hardcodes assumptions about ubuntu+systemd
+2. terraform is flaky around the subnet
+3. terraform is flaky around kubelet.tar sometimes
+4. kubelet.service is very flaky and hang irrepairably hang nodes
+5. phases are fairly tightly coupled
+
+Other things:
+
+1. This copies root ca private key to the nodes which is not needed
+

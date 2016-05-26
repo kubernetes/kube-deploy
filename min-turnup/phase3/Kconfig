@@ -21,18 +21,6 @@ config phase3.dashboard
 	help
 	  Should we deploy the kubernetes dashboard?
 
-config phase3.kube_dns
-	bool "Run kube-dns?"
-	default y
-	help
-	  Should we deploy kube-dns?
-
-config phase3.elasticsearch
-	bool "Run elasticsearch?"
-	default y
-	help
-	  Should we deploy elasticsearch?
-
 endif
 
 endmenu

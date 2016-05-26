@@ -25,6 +25,9 @@ function(cfg)
   local config_metadata_template = std.toString(cfg {
     master_ip: "${google_compute_address.%s.address}",
     role: "%s",
+    phase3+: {
+      addons_config: (import "phase3/all.jsonnet")(cfg),
+    },
   });
   {
     provider: {
@@ -119,6 +122,7 @@ function(cfg)
           metadata_startup_script: std.escapeStringDollars(importstr "../configure-vm.sh"),
           metadata: {
             "k8s-role": "master",
+            "k8s-deploy-bucket": names.release_bucket,
             "k8s-config": config_metadata_template % [names.master_ip, "master"],
           },
           disk: [{
@@ -136,6 +140,7 @@ function(cfg)
           metadata: {
             "startup-script": std.escapeStringDollars(importstr "../configure-vm.sh"),
             "k8s-role": "node",
+            "k8s-deploy-bucket": names.release_bucket,
             "k8s-config": config_metadata_template % [names.master_ip, "node"],
           },
           disk: [{

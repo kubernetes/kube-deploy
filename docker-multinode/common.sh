@@ -221,9 +221,7 @@ kube::multinode::restart_docker(){
         yum -y -q install bridge-utils
       fi
 
-      kube::helpers::file_replace_line ${DOCKER_CONF} \ # Replace content in this file
-        "--bip" \ # Find a line with this content...
-        "OPTIONS=\"\$OPTIONS --mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET}\"" # ...and replace the found line with this line
+      kube::helpers::file_replace_line ${DOCKER_CONF} "--bip" "OPTIONS=\"\$OPTIONS --mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET}\""
 
       ifconfig docker0 down
       
@@ -244,9 +242,7 @@ kube::multinode::restart_docker(){
       else
         DOCKER_CONF="/etc/sysconfig/docker"
 
-        kube::helpers::file_replace_line ${DOCKER_CONF} \ # Replace content in this file
-          "--bip" \ # Find a line with this content...
-          "OPTIONS=\"\$OPTIONS --mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET}\"" # ...and replace the found line with this line
+        kube::helpers::file_replace_line ${DOCKER_CONF} "--bip" "OPTIONS=\"\$OPTIONS --mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET}\""
 
         ifconfig docker0 down
         brctl delbr docker0 
@@ -264,9 +260,7 @@ kube::multinode::restart_docker(){
       else
         DOCKER_CONF="/etc/default/docker"
         
-        kube::helpers::file_replace_line ${DOCKER_CONF} \ # Replace content in this file
-          "--bip" \ # Find a line with this content...
-          "OPTIONS=\"\$OPTIONS --mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET}\"" # ...and replace the found line with this line
+        kube::helpers::file_replace_line ${DOCKER_CONF} "--bip" "OPTIONS=\"\$OPTIONS --mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET}\""
 
         ifconfig docker0 down
         brctl delbr docker0 

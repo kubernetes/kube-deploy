@@ -40,8 +40,8 @@ ExecStart=/usr/bin/docker run \
             --cluster-dns=10.3.0.10 \
             --cluster-domain=cluster.local \
             --v=9
-#Restart=always
-#KillMode=process
+Restart=always
+KillMode=process
 
 [Install]
 WantedBy=multi-user.target

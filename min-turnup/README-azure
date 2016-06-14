@@ -10,3 +10,4 @@ Other things:
 
 1. This copies root ca private key to the nodes which is not needed
 
+2. I don't see `config.phase2.extra-api-sans` being used anywhere...

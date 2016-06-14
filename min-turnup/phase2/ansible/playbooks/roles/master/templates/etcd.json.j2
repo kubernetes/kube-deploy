@@ -20,7 +20,8 @@
           "/usr/local/bin/etcd",
           "--listen-peer-urls=http://127.0.0.1:2380",
           "--addr=127.0.0.1:2379",
-          "--bind-addr=127.0.0.1:2379"
+          "--bind-addr=127.0.0.1:2379",
+          "--data-dir=/var/lib/etcd/data"
         ],
         "livenessProbe": {
           "httpGet": {
@@ -42,7 +43,21 @@
             "containerPort": 2379,
             "hostPort": 2379
           }
+        ],
+        "volumeMounts": [
+          {
+            "name": "varetcd",
+            "mountPath": "/var/lib/etcd"
+          }
         ]
+      }
+    ],
+    "volumes": [
+      {
+        "name": "varetcd",
+        "hostPath": {
+          "path": "/var/lib/etcd"
+        }
       }
     ]
   }

@@ -54,6 +54,10 @@ menuconfig: .tmp/mconf
 echo-config: .config.json
 	cat $<
 
+set-kubeconfig:
+	kubectl config  set-cluster $(CLUSTER_NAME) --server https://$(MASTER_IP):443 --certificate-authority=phase1b/crypto/ca.pem --embed-certs=true
+	kubectl config set-credentials $(CLUSTER_NAME) --server https://$(MASTER_IP):443 --client-certificate=./phase1b/crypto/kubelet.pem --client-key=./phase1b/crypto/kubelet-key.pem --embed-certs=true
+	kubectl config set-context $(CLUSTER_NAME) --cluster $(CLUSTER_NAME) --user $(CLUSTER_NAME)
 
 clean:
 	rm -rf .tmp

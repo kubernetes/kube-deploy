@@ -5,7 +5,7 @@ function(cfg1)
 		resource_group: "%(instance_prefix)s" % cfg,
 		master_public_ip: "%(instance_prefix)s-master-pip" % cfg,
 		availability_set: "%(instance_prefix)s-as" % cfg,
-		storage_account: "%(instance_prefix)sstrg" % cfg,
+		storage_account: "${replace(\"%(instance_prefix)sstrg\", \"-\", \"\")}" % cfg,
 		storage_container: "kube0000%(instance_prefix)s" % cfg,
 		vnet: "%(instance_prefix)s-vnet" % cfg,
 		subnet: "%(instance_prefix)s-subnet" % cfg,
@@ -137,7 +137,8 @@ function(cfg1)
 								DNS.4 = kubernetes.default.svc.cluster.local
 								DNS.5 = names.master_vm
 								IP.1 = ${azurerm_public_ip.pip.ip_address}
-								IP.2 = %s
+								IP.2 = 10.3.0.1
+								IP.3 = %s
 								EOF
 							||| % master_private_ip
 						}

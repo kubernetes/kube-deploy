@@ -22,11 +22,6 @@ kube::multinode::main(){
 
   ETCD_VERSION=${ETCD_VERSION:-"2.2.5"}
 
-  FLANNEL_VERSION=${FLANNEL_VERSION:-"0.5.5"}
-  FLANNEL_IPMASQ=${FLANNEL_IPMASQ:-"true"}
-  FLANNEL_BACKEND=${FLANNEL_BACKEND:-"udp"}
-  FLANNEL_NETWORK=${FLANNEL_NETWORK:-"10.1.0.0/16"}
-
   DNS_DOMAIN=${DNS_DOMAIN:-"cluster.local"}
   DNS_SERVER_IP=${DNS_SERVER_IP:-"10.0.0.10"}
 
@@ -79,10 +74,6 @@ kube::multinode::check_params() {
   # Output the value of the variables
   kube::log::status "K8S_VERSION is set to: ${K8S_VERSION}"
   kube::log::status "ETCD_VERSION is set to: ${ETCD_VERSION}"
-  kube::log::status "FLANNEL_VERSION is set to: ${FLANNEL_VERSION}"
-  kube::log::status "FLANNEL_IPMASQ is set to: ${FLANNEL_IPMASQ}"
-  kube::log::status "FLANNEL_NETWORK is set to: ${FLANNEL_NETWORK}"
-  kube::log::status "FLANNEL_BACKEND is set to: ${FLANNEL_BACKEND}"
   kube::log::status "DNS_DOMAIN is set to: ${DNS_DOMAIN}"
   kube::log::status "DNS_SERVER_IP is set to: ${DNS_SERVER_IP}"
   kube::log::status "RESTART_POLICY is set to: ${RESTART_POLICY}"
@@ -123,40 +114,12 @@ kube::multinode::detect_lsb() {
   kube::log::status "Detected OS: ${lsb_dist}"
 }
 
-# Start a docker bootstrap for running etcd and flannel
-kube::multinode::bootstrap_daemon() {
-
-  kube::log::status "Launching docker bootstrap..."
-
-  docker daemon \
-    -H ${BOOTSTRAP_DOCKER_SOCK} \
-    -p /var/run/docker-bootstrap.pid \
-    --iptables=false \
-    --ip-masq=false \
-    --bridge=none \
-    --graph=/var/lib/docker-bootstrap \
-    --exec-root=/var/run/docker-bootstrap \
-      2> /var/log/docker-bootstrap.log \
-      1> /dev/null &
-
-  # Wait for docker bootstrap to start by "docker ps"-ing every second
-  local SECONDS=0
-  while [[ $(docker -H ${BOOTSTRAP_DOCKER_SOCK} ps 2>&1 1>/dev/null; echo $?) != 0 ]]; do
-    ((SECONDS++))
-    if [[ ${SECONDS} == ${TIMEOUT_FOR_SERVICES} ]]; then
-      kube::log::error "docker bootstrap failed to start. Exiting..."
-      exit
-    fi
-    sleep 1
-  done
-}
-
 # Start etcd on the master node
 kube::multinode::start_etcd() {
 
   kube::log::status "Launching etcd..."
   
-  docker -H ${BOOTSTRAP_DOCKER_SOCK} run -d \
+  docker run -d \
     --restart=${RESTART_POLICY} \
     --net=host \
     gcr.io/google_containers/etcd-${ARCH}:${ETCD_VERSION} \
@@ -167,153 +130,6 @@ kube::multinode::start_etcd() {
 
   # Wait for etcd to come up
   sleep 5
-
-  # Set flannel net config
-  docker -H ${BOOTSTRAP_DOCKER_SOCK} run \
-      --net=host \
-      gcr.io/google_containers/etcd-${ARCH}:${ETCD_VERSION} \
-      etcdctl \
-      set /coreos.com/network/config \
-          "{ \"Network\": \"${FLANNEL_NETWORK}\", \"Backend\": {\"Type\": \"${FLANNEL_BACKEND}\"}}"
-
-  sleep 2
-}
-
-# Start flannel in docker bootstrap, both for master and worker
-kube::multinode::start_flannel() {
-
-  kube::log::status "Launching flannel..."
-
-  docker -H ${BOOTSTRAP_DOCKER_SOCK} run -d \
-    --restart=${RESTART_POLICY} \
-    --net=host \
-    --privileged \
-    -v /dev/net:/dev/net \
-    -v ${FLANNEL_SUBNET_TMPDIR}:/run/flannel \
-    gcr.io/google_containers/flannel-${ARCH}:${FLANNEL_VERSION} \
-    /opt/bin/flanneld \
-      --etcd-endpoints=http://${MASTER_IP}:4001 \
-      --ip-masq="${FLANNEL_IPMASQ}" \
-      --iface="${NET_INTERFACE}"
-
-  # Wait for the flannel subnet.env file to be created instead of a timeout. This is faster and more reliable
-  local SECONDS=0
-  while [[ ! -f ${FLANNEL_SUBNET_TMPDIR}/subnet.env ]]; do
-    ((SECONDS++))
-    if [[ ${SECONDS} == ${TIMEOUT_FOR_SERVICES} ]]; then
-      kube::log::error "flannel failed to start. Exiting..."
-      exit
-    fi
-    sleep 1
-  done
-
-  source ${FLANNEL_SUBNET_TMPDIR}/subnet.env
-
-  kube::log::status "FLANNEL_SUBNET is set to: ${FLANNEL_SUBNET}"
-  kube::log::status "FLANNEL_MTU is set to: ${FLANNEL_MTU}"
-}
-
-# Configure docker net settings, then restart it
-kube::multinode::restart_docker(){
-
-  case "${lsb_dist}" in
-    amzn)
-      DOCKER_CONF="/etc/sysconfig/docker"
-
-      if ! kube::helpers::command_exists ifconfig; then
-        yum -y -q install net-tools
-      fi
-      if ! kube::helpers::command_exists brctl; then
-        yum -y -q install bridge-utils
-      fi
-
-      kube::helpers::file_replace_line ${DOCKER_CONF} \ # Replace content in this file
-        "--bip" \ # Find a line with this content...
-        "OPTIONS=\"\$OPTIONS --mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET}\"" # ...and replace the found line with this line
-
-      ifconfig docker0 down
-      
-      brctl delbr docker0 
-      service docker restart
-      ;;
-    centos)
-      if ! kube::helpers::command_exists ifconfig; then
-        yum -y -q install net-tools
-      fi
-      if ! kube::helpers::command_exists brctl; then
-        yum -y -q install bridge-utils
-      fi
-      
-      # Newer centos releases uses systemd. Handle that
-      if kube::helpers::command_exists systemctl; then
-        kube::multinode::restart_docker_systemd
-      else
-        DOCKER_CONF="/etc/sysconfig/docker"
-
-        kube::helpers::file_replace_line ${DOCKER_CONF} \ # Replace content in this file
-          "--bip" \ # Find a line with this content...
-          "OPTIONS=\"\$OPTIONS --mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET}\"" # ...and replace the found line with this line
-        ifconfig docker0 down
-        brctl delbr docker0 
-        systemctl restart docker
-      fi
-      ;;
-    ubuntu|debian)
-      if ! kube::helpers::command_exists brctl; then
-        apt-get install -y bridge-utils 
-      fi
-
-      # Newer ubuntu and debian releases uses systemd. Handle that
-      if kube::helpers::command_exists systemctl; then
-        kube::multinode::restart_docker_systemd
-      else
-        DOCKER_CONF="/etc/default/docker"
-        
-        kube::helpers::file_replace_line ${DOCKER_CONF} \ # Replace content in this file
-          "--bip" \ # Find a line with this content...
-          "OPTIONS=\"\$OPTIONS --mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET}\"" # ...and replace the found line with this line
-
-        ifconfig docker0 down
-        brctl delbr docker0 
-        service docker stop
-        while [[ $(ps aux | grep /usr/bin/docker | grep -v grep | wc -l) -gt 0 ]]; do
-            kube::log::status "Waiting for docker to terminate"
-            sleep 1
-        done
-        service docker start
-      fi
-      ;;
-    systemd)
-      kube::multinode::restart_docker_systemd
-      ;;
-  esac
-
-  kube::log::status "Restarted docker with the new flannel settings"
-}
-
-# Replace --mtu and --bip in systemd's docker.service file and restart
-kube::multinode::restart_docker_systemd(){
-
-  DOCKER_CONF=$(systemctl cat docker | head -1 | awk '{print $2}')
-
-  # This expression checks if the "--mtu" and "--bip" options are there
-  # If they aren't, they are inserted at the end of the docker command
-  if [[ -z $(grep -- "--mtu=" $DOCKER_CONF) ]]; then
-    sed -e "s@$(grep "/usr/bin/docker" $DOCKER_CONF)@$(grep "/usr/bin/docker" $DOCKER_CONF) --mtu=${FLANNEL_MTU}@g" -i $DOCKER_CONF
-  fi
-  if [[ -z $(grep -- "--bip=" $DOCKER_CONF) ]]; then
-    sed -e "s@$(grep "/usr/bin/docker" $DOCKER_CONF)@$(grep "/usr/bin/docker" $DOCKER_CONF) --bip=${FLANNEL_SUBNET}@g" -i $DOCKER_CONF
-  fi
-
-  ifconfig docker0 down
-  brctl delbr docker0
-
-  # Finds "--mtu=????" and replaces with "--mtu=${FLANNEL_MTU}"
-  # Also finds "--bip=??.??.??.??" and replaces with "--bip=${FLANNEL_SUBNET}"
-  sed -e "s@$(grep -o -- "--mtu=[[:graph:]]*" $DOCKER_CONF)@--mtu=${FLANNEL_MTU}@g;s@$(grep -o -- "--bip=[[:graph:]]*" $DOCKER_CONF)@--bip=${FLANNEL_SUBNET}@g" -i $DOCKER_CONF
-  sed -i.bak 's/^\(MountFlags=\).*/\1shared/' $DOCKER_CONF
-  systemctl daemon-reload
-  systemctl restart docker
 }
 
 # Start kubelet first and then the master components as pods
@@ -338,7 +154,7 @@ kube::multinode::start_k8s_master() {
       --cluster-dns=${DNS_SERVER_IP} \
       --cluster-domain=${DNS_DOMAIN} \
       --hostname-override=$(ip -o -4 addr list ${NET_INTERFACE} | awk '{print $4}' | cut -d/ -f1) \
-      --v=2
+      --v=2 --experimental-flannel-overlay=true
 }
 
 # Start kubelet in a container, for a worker node
@@ -384,21 +200,6 @@ kube::multinode::start_k8s_worker_proxy() {
 
 # Turndown the local cluster
 kube::multinode::turndown(){
-
-  # Check if docker bootstrap is running
-  if [[ $(kube::helpers::is_running ${BOOTSTRAP_DOCKER_SOCK}) == "true" ]]; then
-
-    kube::log::status "Killing docker bootstrap..."
-
-    # Kill all docker bootstrap's containers
-    if [[ $(docker -H ${BOOTSTRAP_DOCKER_SOCK} ps -q | wc -l) != 0 ]]; then
-      docker -H ${BOOTSTRAP_DOCKER_SOCK} rm -f $(docker -H ${BOOTSTRAP_DOCKER_SOCK} ps -q)
-    fi
-
-    # Kill bootstrap docker
-    kill $(ps aux | grep ${BOOTSTRAP_DOCKER_SOCK} | grep -v grep | awk '{print $2}')
-
-  fi
 
   if [[ $(kube::helpers::is_running /hyperkube) == "true" ]]; then
     

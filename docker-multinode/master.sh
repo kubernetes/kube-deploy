@@ -30,13 +30,7 @@ kube::multinode::detect_lsb
 
 kube::multinode::turndown
 
-kube::multinode::bootstrap_daemon
-
 kube::multinode::start_etcd
-
-kube::multinode::start_flannel
-
-kube::multinode::restart_docker
 
 kube::multinode::start_k8s_master
 

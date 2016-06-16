@@ -5,24 +5,11 @@ RUN bash -c "\
 	apt-get install -y make unzip jq && \
 	rm -rf /var/lib/apt/lists/*"
 
-ENV TERRAFORM_VERSION 0.7.0-rc1
+ENV TERRAFORM_VERSION 0.7.0-rc2
 RUN bash -c "\
 	wget -q -O /tmp/terraform.zip \"https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip\" && \
 	unzip /tmp/terraform.zip -d /usr/local/bin/ && \
 	rm /tmp/terraform.zip"
-
-################################################################################################
-# TEMP: For now get terraform from source so we get ipv4 forwarding for Azure
-################################################################################################
-#RUN bash -c "\
-#	apt-get update && apt-get -y upgrade && \
-#	apt-get install -y nodejs npm golang-go && \
-#	rm -rf /var/lib/apt/lists/*"
-#ENV GOPATH "/root/gopkgs"
-#ENV PATH "$GOPATH/bin:$PATH"
-#RUN bash -c "mkdir -p $GOPATH/src/github.com/hashicorp/ && \
-#	git clone https://github.com/hashicorp/terraform $GOPATH/src/github.com/hashicorp/terraform && \
-#	cd $GOPATH/src/github.com/hashicorp/terraform; make dev"
 
 ################################################################################################
 # Azure - Required dependencies
@@ -46,8 +33,8 @@ RUN bash -c "\
 	make; \
 	cp jsonnet /usr/bin/jsonnet;"
 
-WORKDIR /opt/kube-deploy
+WORKDIR /opt/kube-min-turnup
 
-ADD . /opt/kube-deploy/
+ADD . /opt/kube-min-turnup/
 
 CMD make

@@ -47,7 +47,7 @@
         "volumeMounts": [
           {
             "name": "varetcd",
-            "mountPath": "/var/lib/etcd"
+            "mountPath": "/var/etcd"
           }
         ]
       }
@@ -56,7 +56,11 @@
       {
         "name": "varetcd",
         "hostPath": {
-          "path": "/var/lib/etcd"
+{% if phase1['cloud_provider'] == "gce" %}
+          "path": "/mnt/master-pd/var/etcd"
+{% elif phase1['cloud_provider'] == "azure" %}
+          "path": "/var/etcd"
+{% endif %}
         }
       }
     ]

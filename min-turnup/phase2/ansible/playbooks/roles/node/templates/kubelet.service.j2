@@ -25,21 +25,19 @@ ExecStart=/usr/bin/docker run \
             --cloud-config="/etc/kubernetes/azure.json" \
 {% endif %}
             --enable-server \
-            --register-node=true \
             --register-schedulable={{ role == "node" }} \
             --enable-debugging-handlers \
             --api-servers=https://{{ master_ip }} \
             --kubeconfig=/srv/kubernetes/kubeconfig.json \
-{% if role == "master" %}
             --config=/etc/kubernetes/manifests \
-{% elif role == "node" %}
+{% if role == "node" %}
             --hairpin-mode=promiscuous-bridge \
             --network-plugin=kubenet \
             --reconcile-cidr \
 {% endif %}
             --cluster-dns=10.3.0.10 \
             --cluster-domain=cluster.local \
-            --v=9
+            --v=2
 Restart=always
 KillMode=process
 

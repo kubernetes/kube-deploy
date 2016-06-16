@@ -24,6 +24,9 @@ docker-build:
 	docker build -t kube-min-turnup .
 
 docker-run: docker-build
+	docker run -it --net=host kube-min-turnup /bin/bash
+
+docker-dev: docker-build
 	docker run -it --net=host -v `pwd`:/opt/kube-min-turnup kube-min-turnup /bin/bash
 
 default:

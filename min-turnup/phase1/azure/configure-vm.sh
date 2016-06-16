@@ -18,8 +18,6 @@ EOF
 
 curl -sSL https://get.docker.com/ | sh
 
-apt-get update
-#apt-get dist-upgrade -y
 apt-get install -y jq
 
 systemctl start docker || true
@@ -32,8 +30,9 @@ fi
 azure_file="/etc/kubernetes/azure.json"
 config_file="/etc/kubernetes/k8s_config.json"
 
-mkdir /etc/kubernetes
-# these get filled in from terraform
+mkdir -p /etc/kubernetes
+
+# the following values are populated by terraform
 echo -n "${azure_json}" | base64 -d > "$azure_file"
 echo -n "${k8s_config}" | base64 -d > "$config_file"
 echo -n "${kubelet_tar}" | base64 -d > "/etc/kubernetes/kubelet.tar"
@@ -52,6 +51,7 @@ done;
 installer_container_spec="$(cat "$config_file" | jq -r '.phase2.installer_container_spec')"
 
 cat << EOF > /etc/kubernetes/install.sh
+#!/bin/bash
 systemctl stop docker
 systemctl start docker
 docker pull "$installer_container_spec"
@@ -66,4 +66,3 @@ EOF
 chmod +x /etc/kubernetes/install.sh
 /etc/kubernetes/install.sh
 
-#sudo reboot

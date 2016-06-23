@@ -1,0 +1,59 @@
+{
+    "kind": "ReplicationController", 
+    "spec": {
+        "replicas": 1, 
+        "template": {
+            "spec": {
+                "containers": [
+                    {
+                        "ports": [
+                            {
+                                "containerPort": 9090
+                            }
+                        ], 
+                        "livenessProbe": {
+                            "initialDelaySeconds": 30, 
+                            "httpGet": {
+                                "path": "/", 
+                                "port": 9090
+                            }, 
+                            "timeoutSeconds": 30
+                        }, 
+                        "image": "gcr.io/google_containers/kubernetes-dashboard-amd64:v1.1.0-beta2", 
+                        "resources": {
+                            "requests": {
+                                "cpu": "100m", 
+                                "memory": "50Mi"
+                            }, 
+                            "limits": {
+                                "cpu": "100m", 
+                                "memory": "50Mi"
+                            }
+                        }, 
+                        "name": "kubernetes-dashboard"
+                    }
+                ]
+            }, 
+            "metadata": {
+                "labels": {
+                    "k8s-app": "kubernetes-dashboard", 
+                    "version": "v1.1.0-beta2", 
+                    "kubernetes.io/cluster-service": "true"
+                }
+            }
+        }, 
+        "selector": {
+            "k8s-app": "kubernetes-dashboard"
+        }
+    }, 
+    "apiVersion": "v1", 
+    "metadata": {
+        "labels": {
+            "k8s-app": "kubernetes-dashboard", 
+            "version": "v1.1.0-beta2", 
+            "kubernetes.io/cluster-service": "true"
+        }, 
+        "namespace": "kube-system", 
+        "name": "kubernetes-dashboard-v1.1.0-beta2"
+    }
+}

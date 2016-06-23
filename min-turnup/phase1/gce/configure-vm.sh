@@ -7,6 +7,9 @@ set -o nounset
 ROLE=$(curl \
   -H "Metadata-Flavor: Google" \
   "metadata/computeMetadata/v1/instance/attributes/k8s-role")
+BUCKET=$(curl \
+  -H "Metadata-Flavor: Google" \
+  "metadata/computeMetadata/v1/instance/attributes/k8s-deploy-bucket")
 
 mkdir -p /etc/systemd/system/docker.service.d/
 cat <<EOF > /etc/systemd/system/docker.service.d/clear_mount_propagtion_flags.conf
@@ -22,7 +25,7 @@ curl -H 'Metadata-Flavor:Google' \
 #TODO: restrict by role
 mkdir -p /srv/kubernetes
 for bundle in root kubelet apiserver; do
-  gsutil cp "gs://mikedanese-k8s-kube-deploy-k-0/crypto/${bundle}.tar" - \
+  gsutil cp "gs://${BUCKET}/crypto/${bundle}.tar" - \
     | sudo tar xv -C /srv/kubernetes
 done;
 

@@ -1,0 +1,75 @@
+{
+    "kind": "DaemonSet", 
+    "spec": {
+        "hostNetwork": true, 
+        "template": {
+            "spec": {
+                "containers": [
+                    {
+                        "securityContext": {
+                            "privileged": true
+                        }, 
+                        "name": "kube-proxy", 
+                        "command": [
+                            "/bin/sh", 
+                            "-c", 
+                            "kube-proxy --resource-container=\"\""
+                        ], 
+                        "image": "gcr.io/kube-proxy:v1.2.4", 
+                        "volumeMounts": [
+                            {
+                                "readOnly": true, 
+                                "mountPath": "/etc/ssl/certs", 
+                                "name": "ssl-certs-host"
+                            }, 
+                            {
+                                "readOnly": false, 
+                                "mountPath": "/var/log", 
+                                "name": "varlog"
+                            }, 
+                            {
+                                "readOnly": false, 
+                                "mountPath": "/var/lib/kube-proxy/kubeconfig", 
+                                "name": "kubeconfig"
+                            }
+                        ], 
+                        "resources": {
+                            "requests": {
+                                "cpu": "100m"
+                            }
+                        }
+                    }
+                ], 
+                "volumes": [
+                    {
+                        "hostPath": {
+                            "path": "/usr/share/ca-certificates"
+                        }, 
+                        "name": "ssl-certs-host"
+                    }, 
+                    {
+                        "hostPath": {
+                            "path": "/var/lib/kube-proxy/kubeconfig"
+                        }, 
+                        "name": "kubeconfig"
+                    }, 
+                    {
+                        "hostPath": {
+                            "path": "/var/log"
+                        }, 
+                        "name": "varlog"
+                    }
+                ]
+            }
+        }
+    }, 
+    "apiVersion": "v1", 
+    "metadata": {
+        "labels": {
+            "tier": "node", 
+            "component": "kube-proxy"
+        }, 
+        "namespace": "kube-system", 
+        "name": "kube-proxy"
+    }
+}

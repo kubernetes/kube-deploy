@@ -1,0 +1,23 @@
+{
+    "kind": "Service", 
+    "spec": {
+        "ports": [
+            {
+                "targetPort": 9090, 
+                "port": 80
+            }
+        ], 
+        "selector": {
+            "k8s-app": "kubernetes-dashboard"
+        }
+    }, 
+    "apiVersion": "v1", 
+    "metadata": {
+        "labels": {
+            "k8s-app": "kubernetes-dashboard", 
+            "kubernetes.io/cluster-service": "true"
+        }, 
+        "namespace": "kube-system", 
+        "name": "kubernetes-dashboard"
+    }
+}

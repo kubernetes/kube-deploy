@@ -1,0 +1,87 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "name": "kube-controller-manager",
+    "namespace": "kube-system",
+    "labels": {
+      "tier": "control-plane",
+      "component": "kube-controller-manager"
+    }
+  },
+  "spec": {
+    "hostNetwork": true,
+    "containers": [
+      {
+        "name": "kube-controller-manager",
+        "image": "{{ phase2['docker_registry'] }}/hyperkube-amd64:{{ phase2['kubernetes_version'] }}",
+        "resources": {
+          "requests": {
+            "cpu": "200m"
+          }
+        },
+        "command": [
+          "/hyperkube",
+          "controller-manager",
+          "--master=127.0.0.1:8080",
+          "--cluster-name={{ phase1['instance_prefix'] }}",
+          "--cluster-cidr=10.244.0.0/16",
+          "--allocate-node-cidrs=true",
+          "--cloud-provider={{ phase1['cloud_provider'] }}",
+{% if phase1['cloud_provider'] == "azure" %}
+          "--cloud-config=/etc/kubernetes/azure.json",
+{% endif %}
+          "--service-account-private-key-file=/srv/kubernetes/apiserver-key.pem",
+          "--root-ca-file=/srv/kubernetes/ca.pem",
+          "--v=2"
+        ],
+        "livenessProbe": {
+          "httpGet": {
+            "host": "127.0.0.1",
+            "port": 10252,
+            "path": "/healthz"
+          },
+          "initialDelaySeconds": 15,
+          "timeoutSeconds": 15
+        },
+        "volumeMounts": [
+          {
+            "name": "etckube",
+            "mountPath": "/etc/kubernetes",
+            "readOnly": true
+          },
+          {
+            "name": "srvkube",
+            "mountPath": "/srv/kubernetes",
+            "readOnly": true
+          },
+          {
+            "name": "etcssl",
+            "mountPath": "/etc/ssl",
+            "readOnly": true
+          }
+        ]
+      }
+    ],
+    "volumes": [
+      {
+        "name": "etckube",
+        "hostPath": {
+          "path": "/etc/kubernetes"
+        }
+      },
+      {
+        "name": "srvkube",
+        "hostPath": {
+          "path": "/srv/kubernetes"
+        }
+      },
+      {
+        "name": "etcssl",
+        "hostPath": {
+          "path": "/etc/ssl"
+        }
+      }
+    ]
+  }
+}

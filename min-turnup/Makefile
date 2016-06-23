@@ -1,6 +1,8 @@
 
 SHELL=/bin/bash
-.SHELLFLAGS="-O extglob -o errexit -o pipefail -o nounset -c"
+
+# TODO: things break with this uncommented
+#.SHELLFLAGS="-O extglob -o errexit -o pipefail -o nounset -c"
 
 .PHONY: config echo-config
 
@@ -16,6 +18,16 @@ endif
 
 CONF_TOOL_VERSION = 4.6
 KCONFIG_FILES = $(shell find . -name 'Kconfig')
+
+
+docker-build:
+	docker build -t kube-min-turnup .
+
+docker-run: docker-build
+	docker run -it --net=host kube-min-turnup /bin/bash
+
+docker-dev: docker-build
+	docker run -it --net=host -v `pwd`:/opt/kube-min-turnup kube-min-turnup /bin/bash
 
 default:
 	$(MAKE) config
@@ -40,11 +52,15 @@ menuconfig: .tmp/mconf
 	$(MAKE) config
 
 .config.json: .config
-	util/conig_to_json $< > $@
+	util/config_to_json $< > $@
 
 echo-config: .config.json
 	cat $<
 
+set-kubeconfig:
+	kubectl config  set-cluster $(CLUSTER_NAME) --server https://$(MASTER_IP):443 --certificate-authority=phase1b/crypto/ca.pem --embed-certs=true
+	kubectl config set-credentials $(CLUSTER_NAME) --server https://$(MASTER_IP):443 --client-certificate=./phase1b/crypto/kubelet.pem --client-key=./phase1b/crypto/kubelet-key.pem --embed-certs=true
+	kubectl config set-context $(CLUSTER_NAME) --cluster $(CLUSTER_NAME) --user $(CLUSTER_NAME)
 
 clean:
 	rm -rf .tmp

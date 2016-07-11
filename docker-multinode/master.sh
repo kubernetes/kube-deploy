@@ -14,8 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Basedir for multinode
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Source common.sh
-source $(dirname "${BASH_SOURCE}")/common.sh
+source $BASEDIR/common.sh
 
 # Let MASTER_IP default to the current IP when starting a master
 if [[ -z ${MASTER_IP} ]]; then

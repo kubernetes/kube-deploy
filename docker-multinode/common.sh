@@ -17,8 +17,7 @@
 # Utility functions for Kubernetes in docker setup
 
 kube::multinode::main(){
-  LATEST_STABLE_K8S_VERSION=$(kube::helpers::curl "https://storage.googleapis.com/kubernetes-release/release/stable.txt")
-  K8S_VERSION=${K8S_VERSION:-${LATEST_STABLE_K8S_VERSION}}
+  K8S_VERSION=${K8S_VERSION:-$(kube::helpers::k8s_latest_version)}
 
   ETCD_VERSION=${ETCD_VERSION:-"2.2.5"}
 
@@ -26,15 +25,29 @@ kube::multinode::main(){
   FLANNEL_IPMASQ=${FLANNEL_IPMASQ:-"true"}
   FLANNEL_BACKEND=${FLANNEL_BACKEND:-"udp"}
   FLANNEL_NETWORK=${FLANNEL_NETWORK:-"10.1.0.0/16"}
+  
+  PAUSE_VERSION=${PAUSE_VERSION:-"3.0"}
 
   RESTART_POLICY=${RESTART_POLICY:-"unless-stopped"}
+
+  REG_PREFIX=${REG_PREFIX:-"gcr.io/google_containers"}
 
   CURRENT_PLATFORM=$(kube::helpers::host_platform)
   ARCH=${ARCH:-${CURRENT_PLATFORM##*/}}
 
   DEFAULT_NET_INTERFACE=$(ip -o -4 route show to default | awk '{print $5}')
   NET_INTERFACE=${NET_INTERFACE:-${DEFAULT_NET_INTERFACE}}
-
+  
+  # Images
+  ETCD_IMAGE="etcd-${ARCH}:${ETCD_VERSION}"
+  FLANNEL_IMAGE="flannel-${ARCH}:${FLANNEL_VERSION}"
+  HYPERKUBE_IMAGE="hyperkube-${ARCH}:${K8S_VERSION}"
+  
+  PAUSE_IMAGE="pause-${ARCH}:${PAUSE_VERSION}"
+  
+  # Everything except hyperkube
+  ALL_IMAGES="${ETCD_IMAGE} ${FLANNEL_IMAGE} ${PAUSE_IMAGE} ${HYPERKUBE_IMAGE}"
+  
   # Constants
   TIMEOUT_FOR_SERVICES=20
   BOOTSTRAP_DOCKER_SOCK="unix:///var/run/docker-bootstrap.sock"
@@ -121,6 +134,85 @@ kube::multinode::detect_lsb() {
   kube::log::status "Detected OS: ${lsb_dist}"
 }
 
+# Pull required docker images if not present
+kube::multinode::pull_images() {
+  local IMAGES=$(kube::multinode::list_images ${PULL_PREFIX})
+  
+  [[ ! -z "${IMAGES}" ]] || exit 1
+  
+  for IMAGE in ${IMAGES}; do
+    docker pull ${IMAGE}
+  done
+  
+  kube::log::status "All images pulled"
+}
+
+# Pull image from registry if not present
+kube::multinode::pull_from_registry_and_retag() {
+  local PULL_PREFIX=${1}
+  local IMAGES=$(kube::multinode::list_images ${PULL_PREFIX})
+  
+  [[ ! -z "${IMAGES}" ]] || exit 1
+  
+  for IMAGE in ${IMAGES}; do
+    local PULL_IMAGE="${PULL_PREFIX}/$(kube::helpers::image_remove_prefix ${IMAGE})"
+    
+    kube::log::status "Pulling ${PULL_IMAGE} as ${IMAGE}"
+    
+    docker pull ${PULL_IMAGE}
+    docker tag ${PULL_IMAGE} ${IMAGE}
+  done
+  
+  kube::log::status "All images pulled"
+}
+
+# Push all required docker images to a private registry
+# Argument: registry prefix (ex: registry.example.com/k8s)
+kube::multinode::push() {
+  
+  local PUSH_PREFIX=$1
+  local IMAGES=$(kube::multinode::list_images ${REG_PREFIX})
+  
+  [[ ! -z "${IMAGES}" ]] || exit 1
+  
+  for IMAGE in ${IMAGES}; do
+    local SHORT_IMAGE=$(kube::helpers::image_remove_prefix ${IMAGE})
+    local PUSHED_IMAGE="${PUSH_PREFIX}/${SHORT_IMAGE}"
+    
+    docker tag ${IMAGE} ${PUSHED_IMAGE}
+    docker push ${PUSHED_IMAGE}
+    
+    kube::log::status "Pushed ${IMAGE} as ${PUSHED_IMAGE}"
+  done
+  
+  kube::log::status "Required images pushed"
+}
+
+# List all docker images (requires access to the hyperkube image)
+# Arg 1: prefix to pull the hyperkube image from (defaults to REG_PREFIX)
+kube::multinode::list_images() {
+  
+  local PULL_PREFIX=${1:-${REG_PREFIX}}
+  
+  # Retrieves all images from hyperkube image
+  # HACK: would be nice if 'kubectl convert' was used, but because there are a
+  #       lot of different types of files, that gets very complex
+  # TODO: will break if the JSON blobs aren't pretty-printed
+  # TODO: addons container is in gcr.io/google-containers, not gcr.io/google_containers,
+  #       so you can't use REG_PREFIX here
+  local IMAGES=$(docker run --rm -it ${PULL_PREFIX}/${HYPERKUBE_IMAGE} /bin/bash -c 'grep -hr gcr.io /etc/kubernetes | awk '\''/gcr.io/{gsub(prefix, "", $NF); gsub("\"","",$NF); gsub(",","", $NF); print $NF}'\'' | tr "\n" " "')
+  if [[ -z "${IMAGES}" ]]; then
+    kube::log::error "Unable to obtain list of images"
+    exit 1
+  fi
+  
+  IMAGES=$(echo $(for i in ${ALL_IMAGES}; do echo ${REG_PREFIX}/${i}; done) ${IMAGES} | xargs -n1 | sort -u | xargs)
+  
+  for IMAGE in ${IMAGES}; do
+    echo ${IMAGE}
+  done
+}
+
 # Start a docker bootstrap for running etcd and flannel
 kube::multinode::bootstrap_daemon() {
 
@@ -149,6 +241,21 @@ kube::multinode::bootstrap_daemon() {
   done
 }
 
+# Transfers images required for bootstrap docker daemon
+kube::multinode::offline_bootstrap() {
+  
+  for IMAGE in ${ETCD_IMAGE} ${FLANNEL_IMAGE}; do
+    local FULL_IMAGE="${REG_PREFIX}/${IMAGE}"
+    
+    if [[ -z $(docker -H ${BOOTSTRAP_DOCKER_SOCK} images -q ${FULL_IMAGE}) ]]; then
+      kube::log::status "Transferring ${FULL_IMAGE}"
+      docker save ${FULL_IMAGE} | docker -H ${BOOTSTRAP_DOCKER_SOCK} load
+    else
+      kube::log::status "${FULL_IMAGE} already present in bootstrap daemon"
+    fi
+  done
+}
+
 # Start etcd on the master node
 kube::multinode::start_etcd() {
 
@@ -157,7 +264,7 @@ kube::multinode::start_etcd() {
   docker -H ${BOOTSTRAP_DOCKER_SOCK} run -d \
     --restart=${RESTART_POLICY} \
     --net=host \
-    gcr.io/google_containers/etcd-${ARCH}:${ETCD_VERSION} \
+    ${REG_PREFIX}/${ETCD_IMAGE} \
     /usr/local/bin/etcd \
       --listen-client-urls=http://127.0.0.1:4001,http://${MASTER_IP}:4001 \
       --advertise-client-urls=http://${MASTER_IP}:4001 \
@@ -177,7 +284,7 @@ kube::multinode::start_etcd() {
   # Set flannel net config
   docker -H ${BOOTSTRAP_DOCKER_SOCK} run \
       --net=host \
-      gcr.io/google_containers/etcd-${ARCH}:${ETCD_VERSION} \
+      ${REG_PREFIX}/${ETCD_IMAGE} \
       etcdctl \
       set /coreos.com/network/config \
           "{ \"Network\": \"${FLANNEL_NETWORK}\", \"Backend\": {\"Type\": \"${FLANNEL_BACKEND}\"}}"
@@ -196,7 +303,7 @@ kube::multinode::start_flannel() {
     --privileged \
     -v /dev/net:/dev/net \
     -v ${FLANNEL_SUBNET_TMPDIR}:/run/flannel \
-    gcr.io/google_containers/flannel-${ARCH}:${FLANNEL_VERSION} \
+    ${REG_PREFIX}/${FLANNEL_IMAGE} \
     /opt/bin/flanneld \
       --etcd-endpoints=http://${MASTER_IP}:4001 \
       --ip-masq="${FLANNEL_IPMASQ}" \
@@ -340,7 +447,7 @@ kube::multinode::start_k8s_master() {
     --privileged \
     --restart=${RESTART_POLICY} \
     ${KUBELET_MOUNTS} \
-    gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
+    ${REG_PREFIX}/${HYPERKUBE_IMAGE} \
     /hyperkube kubelet \
       --allow-privileged \
       --api-servers=http://localhost:8080 \
@@ -366,7 +473,7 @@ kube::multinode::start_k8s_worker() {
     --privileged \
     --restart=${RESTART_POLICY} \
     ${KUBELET_MOUNTS} \
-    gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
+    ${REG_PREFIX}/${HYPERKUBE_IMAGE} \
     /hyperkube kubelet \
       --allow-privileged \
       --api-servers=http://${MASTER_IP}:8080 \
@@ -382,6 +489,7 @@ kube::multinode::start_k8s_worker_proxy() {
   # Some quite complex version checking here...
   # If the version is under v1.3.0-alpha.5, kube-proxy is run manually in this script
   # In v1.3.0-alpha.5 and above, kube-proxy is run in a DaemonSet 
+
   # This has been uncommented for now, since the DaemonSet was inactivated in the stable v1.3 release
   #if [[ $((VERSION_MINOR < 3)) == 1 || \
   #      $((VERSION_MINOR <= 3)) == 1 && \
@@ -394,7 +502,7 @@ kube::multinode::start_k8s_worker_proxy() {
     --net=host \
     --privileged \
     --restart=${RESTART_POLICY} \
-    gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
+    ${REG_PREFIX}/${HYPERKUBE_IMAGE} \
     /hyperkube proxy \
         --master=http://${MASTER_IP}:8080 \
         --v=2
@@ -423,7 +531,7 @@ kube::multinode::turndown(){
     kube::log::status "Killing hyperkube containers..."
 
     # Kill all hyperkube docker images
-    docker rm -f $(docker ps | grep gcr.io/google_containers/hyperkube | awk '{print $1}')
+    docker rm -f $(docker ps | grep ${REG_PREFIX}/hyperkube | awk '{print $1}')
   fi
 
   if [[ $(kube::helpers::is_running /pause) == "true" ]]; then
@@ -431,7 +539,7 @@ kube::multinode::turndown(){
     kube::log::status "Killing pause containers..."
 
     # Kill all pause docker images
-    docker rm -f $(docker ps | grep gcr.io/google_containers/pause | awk '{print $1}')
+    docker rm -f $(docker ps | grep ${REG_PREFIX}/pause | awk '{print $1}')
   fi
 
   if [[ $(docker ps -q | wc -l) != 0 ]]; then
@@ -566,6 +674,15 @@ kube::helpers::host_platform() {
       exit 1;;
   esac
   echo "${host_os}/${host_arch}"
+}
+
+# For x.y/z/image:version, prints image:version
+kube::helpers::image_remove_prefix() {
+  echo $1 | sed 's/^.*\/.*\///'
+}
+
+kube::helpers::k8s_latest_version() {
+  kube::helpers::curl "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
 }
 
 kube::helpers::parse_version() {

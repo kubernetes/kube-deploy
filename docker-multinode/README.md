@@ -112,3 +112,66 @@ $ sed -e "s/ARCH/${ARCH}/g;" skydns.yaml | kubectl create -f -
 ### Test if DNS works
 
 Follow [this link](https://releases.k8s.io/release-1.2/cluster/addons/dns#how-do-i-test-if-it-is-working) to check it out.
+
+## Offline Support
+
+To use kubernetes in a network that is disconnected from the internet, you need
+to transfer all the necessary docker images to the hosts that you're going to
+use. There are three phases:
+
+* Pull images
+* Transfer the images
+* Run the master/worker steps
+
+One important note is that you MUST explicitly specify your Kubernetes version
+via K8S_VERSION when using the scripts in an offline installation.
+
+### Pull images
+
+First, pull the images onto a machine, and transfer them to the hosts that you'll be using to run Kubernetes.
+
+```console
+$ git clone https://github.com/kubernetes/kube-deploy
+$ cd docker-multinode
+$ export K8S_VERSION="v1.3.0"
+$ ./offline.sh pull
+```
+
+### Transfer images (individually)
+
+To transfer the images individually to each Kubernetes host, you can run
+something like this:
+
+```console
+$ export K8S_VERSION="v1.3.0"
+$ for i in $(./offline.sh list); do echo ${i}; docker save ${i} | ssh user@host 'docker load'; done
+```
+
+Then, copy the docker-multinode directory to each remote host, and run this
+offline bootstrap command on each of them.
+
+```console
+$ export K8S_VERSION="v1.3.0"
+$ ./offline.sh bootstrap
+```
+
+You will need to repeat this transfer for each host that will be running
+Kubernetes.
+
+### Transfer images (private registry)
+
+To use a private registry to transfer the images, you first run this command
+to push the images to the private registry:
+
+```console
+$ export K8S_VERSION="v1.3.0"
+$ ./offline.sh push registry.example.com/google_containers
+```
+
+Then, copy the docker-multinode directory to each remote host, and run this
+offline bootstrap command on each of them.
+
+```console
+$ export K8S_VERSION="v1.3.0"
+$ ./offline.sh bootstrap registry.example.com/google_containers
+```

@@ -123,7 +123,8 @@ kube::multinode::start_etcd() {
 
   # Wait for etcd to come up
   local SECONDS=0
-  while [[ $(kube::helpers::curl http://localhost:2379/v2/machines 2>&1 1>/dev/null; echo $?) != 0 ]]; do
+  # while [[ $(kube::helpers::curl http://localhost:2379/v2/machines 2>&1 1>/dev/null; echo $?) != 0 ]]; do
+  while [[ $(echo $(netstat -an | grep 2379 | wc -l)) == 0 ]]; do
     ((SECONDS++))
     if [[ ${SECONDS} == ${TIMEOUT_FOR_SERVICES} ]]; then
       kube::log::fatal "etcd failed to start. Exiting..."

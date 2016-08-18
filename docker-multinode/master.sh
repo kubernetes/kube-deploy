@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # Copyright 2016 The Kubernetes Authors All rights reserved.
 #
@@ -29,7 +29,7 @@ kube::multinode::turndown
 if [[ ${USE_CNI} == "true" ]]; then
   kube::cni::ensure_docker_settings
 
-  kube::multinode::start_etcd
+#  kube::multinode::start_etcd
 
   kube::multinode::start_flannel
 else

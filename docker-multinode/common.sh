@@ -191,15 +191,19 @@ kube::multinode::start_k8s_master() {
     --name kube_kubelet_$(kube::helpers::small_sha) \
     ${KUBELET_MOUNTS} \
     gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
-    /hyperkube kubelet \
-      --allow-privileged \
-      --api-servers=http://localhost:8080 \
-      --config=/etc/kubernetes/manifests-multi \
-      --cluster-dns=10.0.0.10 \
-      --cluster-domain=cluster.local \
-      ${CNI_ARGS} \
-      --hostname-override=${IP_ADDRESS} \
-      --v=2
+    /nsenter \
+      --target=1 \
+      --mount \
+      --wd=. \
+      -- ./hyperkube kubelet \
+          --allow-privileged \
+          --api-servers=http://localhost:8080 \
+          --config=etc/kubernetes/manifests-multi \
+          --cluster-dns=10.0.0.10 \
+          --cluster-domain=cluster.local \
+          ${CNI_ARGS} \
+          --hostname-override=${IP_ADDRESS} \
+          --v=2
 }
 
 # Start kubelet in a container, for a worker node

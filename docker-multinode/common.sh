@@ -82,7 +82,7 @@ kube::multinode::main(){
     ETCD_NET_PARAM="-p 2379:2379 -p 2380:2380 -p 4001:4001"
     CNI_ARGS="\
       --network-plugin=cni \
-      --network-plugin-dir=/etc/cni/net.d"
+      --network-plugin-dir=etc/cni/net.d"
   fi
 }
 
@@ -181,15 +181,12 @@ kube::multinode::start_flannel() {
 kube::multinode::start_k8s_master() {
   kube::log::status "Launching Kubernetes master components..."
 
-  kube::multinode::make_shared_kubelet_dir
-
   docker run -d \
     --net=host \
     --pid=host \
     --privileged \
     --restart=${RESTART_POLICY} \
     --name kube_kubelet_$(kube::helpers::small_sha) \
-    ${KUBELET_MOUNTS} \
     gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
     /nsenter \
       --target=1 \

@@ -66,7 +66,7 @@ kube::bootstrap::restart_docker(){
   elif kube::helpers::command_exists apt-get; then
     DOCKER_CONF="/etc/default/docker"
     kube::helpers::backup_file ${DOCKER_CONF}
-        
+
     # Is there an uncommented DOCKER_OPTS line at all?
     if [[ -z $(grep "DOCKER_OPTS" $DOCKER_CONF | grep -v "#") ]]; then
       echo "DOCKER_OPTS=\"--mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET} \"" >> ${DOCKER_CONF}
@@ -119,7 +119,10 @@ kube::helpers::replace_mtu_bip(){
 
   # Finds "--mtu=????" and replaces with "--mtu=${FLANNEL_MTU}"
   # Also finds "--bip=??.??.??.??" and replaces with "--bip=${FLANNEL_SUBNET}"
-  # NOTE: This method replaces a whole 'mtu' or 'bip' expression. If it ends with a punctuation mark it will be truncated.
-  # Please add additional space before the punctuation mark to prevent this. For example: "--mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET} ".
+
+  # If a whole 'mtu' or 'bip' expression ends with a punctuation mark on the end of line, add additional space before
+  # punctuation make prevent truncate it by following "--mtu" and "--bip" replacement.
+  # For example: "--mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET}" --> "--mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET} ".
+  sed -e 's@\(--mtu=[[:graph:]]*\)\([[:punct:]]\{1\}\)$@\1 \2@g;s@\(--bip=[[:graph:]]*\)\([[:punct:]]\{1\}\)$@\1 \2@g' -i $DOCKER_CONF
   sed -e "s@$(grep -o -- "--mtu=[[:graph:]]*" $DOCKER_CONF)@--mtu=${FLANNEL_MTU}@g;s@$(grep -o -- "--bip=[[:graph:]]*" $DOCKER_CONF)@--bip=${FLANNEL_SUBNET}@g" -i $DOCKER_CONF
 }

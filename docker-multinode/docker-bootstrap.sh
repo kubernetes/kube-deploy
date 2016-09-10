@@ -19,12 +19,23 @@
 # Start a docker bootstrap for running etcd and flannel
 kube::bootstrap::bootstrap_daemon() {
 
+  BOOTSTRAP_DOCKER_OPTS="-H unix://${BOOTSTRAP_DOCKER_SOCK} \
+    -p /var/run/docker-bootstrap.pid \
+    --iptables=false \
+    --ip-masq=false \
+    --bridge=none \
+    --graph=/var/lib/docker-bootstrap \
+    --exec-root=/var/run/docker-bootstrap"
+
   if [ -x "$(command -v systemctl)" ]; then
 
-    kube::log::status "Installing docker bootstrap service..."
+    kube::log::status "Installing docker bootstrap..."
 
-    cp -f ./docker-bootstrap.socket /lib/systemd/system
-    cp -f ./docker-bootstrap.service /lib/systemd/system
+    sed "s/\${BOOTSTRAP_DOCKER_SOCK}/$BOOTSTRAP_DOCKER_SOCK/g" \
+      ./docker-bootstrap.socket > /lib/systemd/system/docker-bootstrap.socket
+
+    sed "s/\${BOOTSTRAP_DOCKER_OPTS}/$BOOTSTRAP_DOCKER_OPTS/g" \
+      ./docker-bootstrap.service > /lib/systemd/system/docker-bootstrap.service
 
     systemctl daemon-reload &&
       systemctl enable docker-bootstrap.service &&
@@ -34,14 +45,7 @@ kube::bootstrap::bootstrap_daemon() {
 
     kube::log::status "Launching docker bootstrap..."
 
-    docker daemon \
-      -H ${BOOTSTRAP_DOCKER_SOCK} \
-      -p /var/run/docker-bootstrap.pid \
-      --iptables=false \
-      --ip-masq=false \
-      --bridge=none \
-      --graph=/var/lib/docker-bootstrap \
-      --exec-root=/var/run/docker-bootstrap \
+    docker daemon $BOOTSTRAP_DOCKER_OPTS \
         2> /var/log/docker-bootstrap.log \
         1> /dev/null &
 

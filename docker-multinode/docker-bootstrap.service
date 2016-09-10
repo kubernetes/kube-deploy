@@ -6,7 +6,7 @@ Requires=docker-bootstrap.socket
 
 [Service]
 Type=notify
-ExecStart=/usr/bin/docker daemon -H unix:///var/run/docker-bootstrap.sock -p /var/run/docker-bootstrap.pid --iptables=false --ip-masq=false --bridge=none --graph=/var/lib/docker-bootstrap --exec-root=/var/run/docker-bootstrap 
+ExecStart=/usr/bin/docker daemon $BOOTSTRAP_DOCKER_OPTS
 MountFlags=slave
 LimitNOFILE=1048576
 LimitNPROC=1048576

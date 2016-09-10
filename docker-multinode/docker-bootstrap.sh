@@ -31,10 +31,10 @@ kube::bootstrap::bootstrap_daemon() {
 
     kube::log::status "Installing docker bootstrap..."
 
-    sed "s|\$BOOTSTRAP_DOCKER_SOCK|$BOOTSTRAP_DOCKER_SOCK|g" \
+    sed "s|\$BOOTSTRAP_DOCKER_SOCK|${BOOTSTRAP_DOCKER_SOCK}|g" \
       ./docker-bootstrap.socket > /lib/systemd/system/docker-bootstrap.socket
 
-    sed "s|\$BOOTSTRAP_DOCKER_OPTS|$BOOTSTRAP_DOCKER_OPTS|g" \
+    sed "s|\$BOOTSTRAP_DOCKER_OPTS|${BOOTSTRAP_DOCKER_OPTS}|g" \
       ./docker-bootstrap.service > /lib/systemd/system/docker-bootstrap.service
 
     systemctl daemon-reload &&
@@ -45,7 +45,7 @@ kube::bootstrap::bootstrap_daemon() {
 
     kube::log::status "Launching docker bootstrap..."
 
-    docker daemon $BOOTSTRAP_DOCKER_OPTS \
+    docker daemon ${BOOTSTRAP_DOCKER_OPTS} \
         2> /var/log/docker-bootstrap.log \
         1> /dev/null &
 

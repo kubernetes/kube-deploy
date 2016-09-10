@@ -1,0 +1,20 @@
+[Unit]
+Description=Docker Bootstrap Application Container Engine
+Documentation=https://docs.docker.com
+After=network.target docker-bootstrap.socket
+Requires=docker-bootstrap.socket
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/docker daemon -H unix:///var/run/docker-bootstrap.sock -p /var/run/docker-bootstrap.pid --iptables=false --ip-masq=false --bridge=none --graph=/var/lib/docker-bootstrap --exec-root=/var/run/docker-bootstrap 
+MountFlags=slave
+LimitNOFILE=1048576
+LimitNPROC=1048576
+LimitCORE=infinity
+TasksMax=infinity
+TimeoutStartSec=0
+Delegate=yes
+
+[Install]
+WantedBy=multi-user.target
+

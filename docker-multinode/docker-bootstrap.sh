@@ -23,7 +23,9 @@ kube::bootstrap::bootstrap_daemon() {
 
     kube::log::status "Installing docker bootstrap service..."
 
-    cp -f ./docker-bootstrap.* /lib/systemd/system
+    cp -f ./docker-bootstrap.socket /lib/systemd/system
+    cp -f ./docker-bootstrap.service /lib/systemd/system
+
     systemctl daemon-reload &&
       systemctl enable docker-bootstrap.service &&
       systemctl start docker-bootstrap.service

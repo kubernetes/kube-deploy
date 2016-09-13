@@ -19,7 +19,7 @@
 # Start a docker bootstrap for running etcd and flannel
 kube::bootstrap::bootstrap_daemon() {
 
-  BOOTSTRAP_DOCKER_OPTS="-H unix://${BOOTSTRAP_DOCKER_SOCK} \
+  BOOTSTRAP_DOCKER_OPTS="-H ${BOOTSTRAP_DOCKER_SOCK} \
     -p /var/run/docker-bootstrap.pid \
     --iptables=false \
     --ip-masq=false \
@@ -31,7 +31,7 @@ kube::bootstrap::bootstrap_daemon() {
 
     kube::log::status "Installing docker bootstrap..."
 
-    sed "s|\$BOOTSTRAP_DOCKER_SOCK|${BOOTSTRAP_DOCKER_SOCK}|g" \
+    sed "s|\$BOOTSTRAP_DOCKER_SOCK|${BOOTSTRAP_DOCKER_SOCK:7}|g" \
       ./docker-bootstrap.socket > /lib/systemd/system/docker-bootstrap.socket
 
     sed "s|\$BOOTSTRAP_DOCKER_OPTS|${BOOTSTRAP_DOCKER_OPTS}|g" \

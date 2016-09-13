@@ -84,6 +84,7 @@ kube::multinode::main(){
     -v /run:/run:rw \
     -v /var/lib/docker:/var/lib/docker:rw \
     ${KUBELET_MOUNT} \
+    -v /etc/kubernetes:/etc/kubernetes:rw \
     -v /var/log/containers:/var/log/containers:rw"
 
   # Paths
@@ -97,12 +98,12 @@ kube::multinode::main(){
       --network-plugin=cni \
       --network-plugin-dir=/etc/cni/net.d"
   fi
+
+  kube::helpers::parse_version ${K8S_VERSION}
 }
 
 # Ensure everything is OK, docker is running and we're root
 kube::multinode::log_variables() {
-
-  kube::helpers::parse_version ${K8S_VERSION}
 
   # Output the value of the variables
   kube::log::status "K8S_VERSION is set to: ${K8S_VERSION}"

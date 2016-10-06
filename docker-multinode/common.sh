@@ -38,7 +38,7 @@ kube::multinode::main(){
 
   LATEST_STABLE_K8S_VERSION=$(curl -sSL "https://storage.googleapis.com/kubernetes-release/release/stable.txt")
   K8S_VERSION=${K8S_VERSION:-${LATEST_STABLE_K8S_VERSION}}
-  HYPERKUBE_BASE_URL=${HYPERKUBE_BASE_URL:-"gcr.io/google_containers/hyperkube-"}
+  REGISTRY=${REGISTRY:-"gcr.io/google_containers"}
 
   CURRENT_PLATFORM=$(kube::helpers::host_platform)
   ARCH=${ARCH:-${CURRENT_PLATFORM##*/}}
@@ -107,7 +107,7 @@ kube::multinode::log_variables() {
 
   # Output the value of the variables
   kube::log::status "K8S_VERSION is set to: ${K8S_VERSION}"
-  kube::log::status "HYPERKUBE_BASE_URL is set to: ${HYPERKUBE_BASE_URL}"
+  kube::log::status "REGISTRY is set to: ${REGISTRY}"
   kube::log::status "ETCD_VERSION is set to: ${ETCD_VERSION}"
   kube::log::status "FLANNEL_VERSION is set to: ${FLANNEL_VERSION}"
   kube::log::status "FLANNEL_IPMASQ is set to: ${FLANNEL_IPMASQ}"
@@ -210,7 +210,7 @@ kube::multinode::start_k8s_master() {
     --restart=${RESTART_POLICY} \
     --name kube_kubelet_$(kube::helpers::small_sha) \
     ${KUBELET_MOUNTS} \
-    ${HYPERKUBE_BASE_URL}${ARCH}:${K8S_VERSION} \
+    ${REGISTRY}/hyperkube-${ARCH}:${K8S_VERSION} \
     /hyperkube kubelet \
       --allow-privileged \
       --api-servers=http://localhost:8080 \
@@ -238,7 +238,7 @@ kube::multinode::start_k8s_worker() {
     --restart=${RESTART_POLICY} \
     --name kube_kubelet_$(kube::helpers::small_sha) \
     ${KUBELET_MOUNTS} \
-    ${HYPERKUBE_BASE_URL}${ARCH}:${K8S_VERSION} \
+    ${REGISTRY}/hyperkube-${ARCH}:${K8S_VERSION} \
     /hyperkube kubelet \
       --allow-privileged \
       --api-servers=http://${MASTER_IP}:8080 \
@@ -259,7 +259,7 @@ kube::multinode::start_k8s_worker_proxy() {
     --privileged \
     --name kube_proxy_$(kube::helpers::small_sha) \
     --restart=${RESTART_POLICY} \
-    ${HYPERKUBE_BASE_URL}${ARCH}:${K8S_VERSION} \
+    ${REGISTRY}/hyperkube-${ARCH}:${K8S_VERSION} \
     /hyperkube proxy \
         --master=http://${MASTER_IP}:8080 \
         --v=2

@@ -133,7 +133,7 @@ kube::multinode::start_etcd() {
     --restart=${RESTART_POLICY} \
     ${ETCD_NET_PARAM} \
     -v /var/lib/kubelet/etcd:/var/etcd \
-    gcr.io/google_containers/etcd-${ARCH}:${ETCD_VERSION} \
+    ${REGISTRY}/etcd-${ARCH}:${ETCD_VERSION} \
     /usr/local/bin/etcd \
       --listen-client-urls=http://0.0.0.0:2379,http://0.0.0.0:4001 \
       --advertise-client-urls=http://localhost:2379,http://localhost:4001 \

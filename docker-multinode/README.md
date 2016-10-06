@@ -97,6 +97,17 @@ curl -sSL https://storage.googleapis.com/kubernetes-release/release/v[KUBECTL_VE
 chmod +x /usr/local/bin/kubectl
 ```
 
+## Customize images
+
+If you wish, you can customize the images that are used for Hyperkube and etcd. To do so set the
+`REGISTRY` variable to the repository URL for where your images will be stored. Under this URL you
+should provide:
+
+* An image named `hyperkube-$ARCH:$K8SVERSION`, where `$ARCH` and `$K8SVERSION` are
+  replaced with appropriate values for your install. For example: `hyperkube-amd64:v1.4.0`
+* An image named `etcd-$ARCH:$ETCD_VERSION`, where `$ARCH` and `$ETCD_VERSION` are replaced with
+  appropriate values for your install. For example: `etcd-amd64:3.0.4`
+
 ## Addons
 
 kube-dns and the dashboard are deployed automatically with v1.3.0

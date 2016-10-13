@@ -92,6 +92,7 @@ kube::bootstrap::restart_docker(){
 kube::bootstrap::restart_docker_systemd(){
 
   DOCKER_CONF=$(systemctl cat docker | head -1 | awk '{print $2}')
+  kube::log::status "docker_conf set to :${DOCKER_CONF}"
   kube::helpers::backup_file ${DOCKER_CONF}
   kube::helpers::replace_mtu_bip ${DOCKER_CONF} $(which docker)
 
@@ -107,19 +108,21 @@ kube::bootstrap::restart_docker_systemd(){
 
 kube::helpers::replace_mtu_bip(){
   local DOCKER_CONF=$1
-  local SEARCH_FOR=$2
-
+  local SEARCH_FOR="ExecStart=/usr/bin/dockerd"
+  #kube::log::status "replace_mtu_bip docker_conf set to :${DOCKER_CONF}"
+  #kube::log::status "replace_mtu_bip SEARCH_FOR set to :${SEARCH_FOR}"
+  local COMMAND_DOCKER=$SEARCH_FOR
   # Assuming is a $SEARCH_FOR statement already, and we should append the options if they do not exist
   if [[ -z $(grep -- "--mtu=" $DOCKER_CONF) ]]; then
-    sed -e "s@$(grep "$SEARCH_FOR" $DOCKER_CONF)@$(grep "$SEARCH_FOR" $DOCKER_CONF) --mtu=${FLANNEL_MTU}@g" -i $DOCKER_CONF
+    sed -e "s@$COMMAND_DOCKER@$COMMAND_DOCKER --mtu=${FLANNEL_MTU}@g" -i $DOCKER_CONF
   fi
   if [[ -z $(grep -- "--bip=" $DOCKER_CONF) ]]; then
-    sed -e "s@$(grep "$SEARCH_FOR" $DOCKER_CONF)@$(grep "$SEARCH_FOR" $DOCKER_CONF) --bip=${FLANNEL_SUBNET}@g" -i $DOCKER_CONF
+    sed -e "s@$COMMAND_DOCKER@$COMMAND_DOCKER --bip=${FLANNEL_SUBNET}@g" -i $DOCKER_CONF
   fi
 
   # Finds "--mtu=????" and replaces with "--mtu=${FLANNEL_MTU}"
   # Also finds "--bip=??.??.??.??" and replaces with "--bip=${FLANNEL_SUBNET}"
   # NOTE: This method replaces a whole 'mtu' or 'bip' expression. If it ends with a punctuation mark it will be truncated.
   # Please add additional space before the punctuation mark to prevent this. For example: "--mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET} ".
-  sed -e "s@$(grep -o -- "--mtu=[[:graph:]]*" $DOCKER_CONF)@--mtu=${FLANNEL_MTU}@g;s@$(grep -o -- "--bip=[[:graph:]]*" $DOCKER_CONF)@--bip=${FLANNEL_SUBNET}@g" -i $DOCKER_CONF
+  sed -e 's@$(grep -o -- "--mtu=[[:graph:]]*" $DOCKER_CONF)@--mtu=${FLANNEL_MTU}@g;s@$(grep -o -- "--bip=[[:graph:]]*" $DOCKER_CONF)@--bip=${FLANNEL_SUBNET}@g' -i $DOCKER_CONF
 }

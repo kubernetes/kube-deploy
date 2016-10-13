@@ -36,8 +36,8 @@ kube::multinode::main(){
     kube::log::fatal "Docker is not running on this machine!"
   fi
 
-  LATEST_STABLE_K8S_VERSION=$(curl -sSL "https://storage.googleapis.com/kubernetes-release/release/stable.txt")
-  K8S_VERSION=${K8S_VERSION:-${LATEST_STABLE_K8S_VERSION}}
+#  LATEST_STABLE_K8S_VERSION=$(curl -sSL "https://storage.googleapis.com/kubernetes-release/release/stable.txt")
+  K8S_VERSION=${K8S_VERSION:-v1.4.1}
 
   CURRENT_PLATFORM=$(kube::helpers::host_platform)
   ARCH=${ARCH:-${CURRENT_PLATFORM##*/}}
@@ -76,7 +76,8 @@ kube::multinode::main(){
     KUBELET_MOUNT="-v /var/lib/kubelet:/var/lib/kubelet:shared"
     CONTAINERIZED_FLAG=""
   fi
-
+  mount -o remount rw /sys/fs/cgroup
+  ln -s /sys/fs/cgroup/cpu,cpuacct /sys/fs/cgroup/cpuacct,cpu
   KUBELET_MOUNTS="\
     ${ROOTFS_MOUNT} \
     -v /sys:/sys:rw \
@@ -134,7 +135,7 @@ kube::multinode::start_etcd() {
     gcr.io/google_containers/etcd-${ARCH}:${ETCD_VERSION} \
     /usr/local/bin/etcd \
       --listen-client-urls=http://0.0.0.0:2379,http://0.0.0.0:4001 \
-      --advertise-client-urls=http://localhost:2379,http://localhost:4001 \
+      --advertise-client-urls=http://${MASTER_IP}:2379,http://${MASTER_IP}:4001 \
       --listen-peer-urls=http://0.0.0.0:2380 \
       --data-dir=/var/etcd/data
 
@@ -337,7 +338,7 @@ kube::multinode::make_shared_kubelet_dir() {
 kube::multinode::create_kubeconfig(){
   # Create a kubeconfig.yaml file for the proxy daemonset
   mkdir -p /var/lib/kubelet/kubeconfig
-  sed -e "s|MASTER_IP|${MASTER_IP}|g" kubeconfig.yaml > /var/lib/kubelet/kubeconfig/kubeconfig.yaml
+  sed -e "s/MASTER_IP/${MASTER_IP}/g" kubeconfig.yaml > /var/lib/kubelet/kubeconfig/kubeconfig.yaml
 }
 
 # Check if a command is valid

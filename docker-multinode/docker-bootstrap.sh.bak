@@ -114,10 +114,10 @@ kube::helpers::replace_mtu_bip(){
   local COMMAND_DOCKER=$SEARCH_FOR
   # Assuming is a $SEARCH_FOR statement already, and we should append the options if they do not exist
   if [[ -z $(grep -- "--mtu=" $DOCKER_CONF) ]]; then
-    sed -e "s@$COMMAND_DOCKER@$COMMAND_DOCKER --mtu=${FLANNEL_MTU} @g" -i $DOCKER_CONF
+    sed -e "s@$COMMAND_DOCKER@$COMMAND_DOCKER --mtu=${FLANNEL_MTU}@g" -i $DOCKER_CONF
   fi
   if [[ -z $(grep -- "--bip=" $DOCKER_CONF) ]]; then
-    sed -e "s@$COMMAND_DOCKER@$COMMAND_DOCKER --bip=${FLANNEL_SUBNET} @g" -i $DOCKER_CONF
+    sed -e "s@$COMMAND_DOCKER@$COMMAND_DOCKER --bip=${FLANNEL_SUBNET}@g" -i $DOCKER_CONF
   fi
 
   # Finds "--mtu=????" and replaces with "--mtu=${FLANNEL_MTU}"

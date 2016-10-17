@@ -17,7 +17,36 @@
 cd "$(dirname "${BASH_SOURCE}")"
 source cni-plugin.sh
 source docker-bootstrap.sh
+kube::multinode::remountcgroup(){
 
+  cat <<EOF >//usr/bin/remount-cgroup.sh 
+  #!/bin/sh
+
+  mount -o remount rw /sys/fs/cgroup
+  ln -s /sys/fs/cgroup/cpu,cpuacct /sys/fs/cgroup/cpuacct,cpu
+EOF
+
+  chmod 777 /usr/bin/remount-cgroup.sh
+
+  cat <<EOF >//usr/lib/systemd/system/remount-cgroup.service
+  [Unit]
+  Description=remount cgroup
+  Before=docker.service
+
+  [Service]
+  Type=notify
+  ExecStart=/usr/bin/remount-cgroup.sh
+
+  [Install]
+  WantedBy=multi-user.target
+EOF
+
+  systemctl daemon-reload
+  systemctl enable remount-cgroup
+  systemctl start remount-cgroup
+
+
+}
 kube::multinode::main(){
 
   # Require root
@@ -76,8 +105,7 @@ kube::multinode::main(){
     KUBELET_MOUNT="-v /var/lib/kubelet:/var/lib/kubelet:shared"
     CONTAINERIZED_FLAG=""
   fi
-  mount -o remount rw /sys/fs/cgroup
-  ln -s /sys/fs/cgroup/cpu,cpuacct /sys/fs/cgroup/cpuacct,cpu
+  kube::multinode::remountcgroup
   KUBELET_MOUNTS="\
     ${ROOTFS_MOUNT} \
     -v /sys:/sys:rw \

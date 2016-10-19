@@ -66,7 +66,7 @@ kube::multinode::main(){
   fi
 
 #  LATEST_STABLE_K8S_VERSION=$(curl -sSL "https://storage.googleapis.com/kubernetes-release/release/stable.txt")
-  K8S_VERSION=${K8S_VERSION:-v1.4.1}
+  K8S_VERSION=${K8S_VERSION:-v1.4.3}
 
   CURRENT_PLATFORM=$(kube::helpers::host_platform)
   ARCH=${ARCH:-${CURRENT_PLATFORM##*/}}

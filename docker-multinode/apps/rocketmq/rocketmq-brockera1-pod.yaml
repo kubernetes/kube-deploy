@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Pod
+metadata:
+    labels:
+        k8s-app: rocketmq-brokera-slave
+	version: v1
+    spec:
+      containers:
+      - image: rocketmq:v3.5.8
+        name: rocketmq-broker1-master
+	command: ["/home/admin/RocketMQ/devenv/bin/mqbroker"]
+	args:
+	- --storePathRootDir "/var/rocketmq/store"
+	- --storePathCommitLog "/var/rocketmq/store/commitlog"
+	- --brokerName "brokera"
+	- --brokerId "1"
+	- --fileReservedTime "48"
+	- --brokerRole "ASYNC_MASTER"
+	- --namesrvAddr "rocketmq-namesrv:9876"
+	- --listenPort 10911
+	resources:
+	  limits:
+	    cpu: 100m
+	    memory:1024Mi
+	  requests:
+	    cpu: 100m
+	    memory:300Mi
+	ports:
+	- containerPort: 10911
+	  name: listenport
+	  protocol: TCP
+	volumeMounts:
+	- mountPath: "/var/rocketmq/store"
+	  name: "rocket-messagestore"
+      volumes:
+      - name: "rocket-messagestore"
+        emptyDir: {}

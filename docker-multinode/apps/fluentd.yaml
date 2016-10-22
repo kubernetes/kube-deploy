@@ -6,15 +6,13 @@ metadata:
   labels:
     k8s-app: fluentd
     version: v1
-    kubernetes.io/cluster-service: "true"
 spec:
   template:
     metadata:
       labels:
         k8s-app: fluentd
         version: v1
-        kubernetes.io/cluster-service: "true"
     spec:
       containers:
       - name: fluentd
-        image: kubernetes/fluentd-elasticsearch
+        image: gcr.io/google_containers/fluentd-elasticsearch:1.19

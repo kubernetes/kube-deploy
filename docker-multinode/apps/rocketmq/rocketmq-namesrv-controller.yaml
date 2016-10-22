@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: rocketmq-namesrv
+  labels:
+    k8s-app: rocketmq-namesrv
+    version: v3.5.8
+spec:
+  replicas: 1
+  selector:
+    k8s-app: rocketmq-namesrv
+    version: v1
+  template:
+    metadata:
+        labels:
+	k8s-app: rocketmq-namesrv
+	version: v1
+    spec:
+      containers:
+      - image: rocketmq:v3.5.8
+        name: rocketmq-namesrv
+	command: ["/home/admin/RocketMQ/devenv/bin/mqnamesrv"]
+	resources:
+	  limits:
+	    cpu: 100m
+	  requests:
+	    cpu: 100m
+	ports:
+	- containerPort: 8976
+	  name: listenport
+	  protocol: TCP

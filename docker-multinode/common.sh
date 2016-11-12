@@ -84,7 +84,7 @@ kube::multinode::main(){
     -v /sys:/sys:rw \
     -v /var/run:/var/run:rw \
     -v /run:/run:rw \
-    -v ${DOCKER_ROOT}:/var/lib/docker:rw \
+    -v ${DOCKER_ROOT}:${DOCKER_ROOT}:rw \
     ${KUBELET_MOUNT} \
     -v /var/log/containers:/var/log/containers:rw"
 

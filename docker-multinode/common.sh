@@ -112,6 +112,9 @@ kube::multinode::main(){
     -v /var/run:/var/run:rw \
     -v /run:/run:rw \
     -v /var/lib/docker:/var/lib/docker:rw \
+    -v /sbin/modprobe:/sbin/modprobe:ro \
+    -v /lib/modules:/lib/modules:ro \
+    -v /etc/ceph:/etc/ceph:ro \
     ${KUBELET_MOUNT} \
     -v /var/log/containers:/var/log/containers:rw"
 

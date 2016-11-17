@@ -8,12 +8,14 @@ RUN mvn -Dmaven.test.skip=true clean package install assembly:assembly -U
 RUN ln -s target/alibaba-rocketmq-broker/alibaba-rocketmq devenv
 ADD broker.properties /etc/rocketmq/broker.properties
 ADD play.sh /home/admin/RocketMQ/devenv/bin/play.sh
-
-RUN chmod 777 /home/admin/RocketMQ/devenv/bin/play.sh
-RUN chmod 777 /home/admin/RocketMQ/devenv/bin/mqnamesrv
-RUN chmod 777 /home/admin/RocketMQ/devenv/bin/mqbroker
-
 WORKDIR /home/admin/RocketMQ/devenv/bin
-ENTRYPOINT ["/home/admin/RocketMQ/devenv/bin/play.sh"]
+USER root
+RUN ["chattr", "-i", "play.sh"]
+RUN ["chmod", "+x", "mqnamesrv"]
+RUN ["chmod", "+x", "mqbroker"]
+RUN ["chmod", "+x", "play.sh"]
+USER admin
+ENV JAVA_HOME /usr/lib/jvm/java-7-openjdk-amd64
+CMD ["/home/admin/RocketMQ/devenv/bin/play.sh"]
 EXPOSE 9876
 EXPOSE 10911

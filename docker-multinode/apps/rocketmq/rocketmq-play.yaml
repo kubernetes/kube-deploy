@@ -8,24 +8,24 @@ spec:
     k8s-app: rocketmq
   template:
     metadata:
-        labels:
-	  k8s-app: rocketmq
+      labels:
+        k8s-app: rocketmq
     spec:
       containers:
-      - image: rocketmq:v3.5.8
+      - image: 58.240.173.172:5000/rocketmq:v3.5.8
         name: rocketmq
-	ports:
-	- containerPort: 8976
-	  name: namesrv
-	  protocol: TCP
+        ports:
+        - containerPort: 8976
+          name: namesrv
+          protocol: TCP
         - containerPort: 10911
-	  name: broker
-	  protocol: TCP
+          name: broker
+          protocol: TCP
         volumeMounts:
         - mountPath: /var/rocketmq/store
           name: rockermq-data
-	- mountPath: /etc/rocketmq/
-	  name: config-volume
+        - mountPath: /etc/rocketmq/
+          name: config-volume
       volumes:
       - name: rockermq-data
         persistentVolumeClaim:

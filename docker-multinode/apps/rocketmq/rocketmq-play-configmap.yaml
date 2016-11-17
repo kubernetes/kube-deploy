@@ -5,5 +5,5 @@ metadata:
   namespace: default
 data:
   broker.properties: |-
-    storePathRootDir=/var/rocketmq/store
-    storePathCommitLog=/var/rocketmq/store/commitlog
+    storePathRootDir=/home/admin/rocketmq/store/data
+    storePathCommitLog=/home/admin/rocketmq/store/commitlog

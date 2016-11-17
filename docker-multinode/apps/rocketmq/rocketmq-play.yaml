@@ -15,21 +15,16 @@ spec:
       - image: 58.240.173.172:5000/rocketmq:v3.5.8
         name: rocketmq
         ports:
-        - containerPort: 8976
+        - containerPort: 9876
           name: namesrv
           protocol: TCP
         - containerPort: 10911
           name: broker
           protocol: TCP
         volumeMounts:
-        - mountPath: /var/rocketmq/store
+        - mountPath: /home/admin/rocketmq/store
           name: rockermq-data
-        - mountPath: /etc/rocketmq/
-          name: config-volume
       volumes:
       - name: rockermq-data
         persistentVolumeClaim:
           claimName: rockermq-a
-      - name: config-volume
-        configMap:
-          name: rocketmq-config

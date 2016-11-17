@@ -115,6 +115,7 @@ kube::multinode::main(){
     -v /sbin/modprobe:/sbin/modprobe:ro \
     -v /lib/modules:/lib/modules:ro \
     -v /etc/ceph:/etc/ceph:ro \
+    -v /dev:/dev:rw \
     ${KUBELET_MOUNT} \
     -v /var/log/containers:/var/log/containers:rw"
 

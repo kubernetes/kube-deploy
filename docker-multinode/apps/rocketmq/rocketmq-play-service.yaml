@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rocketmq
+  labels:
+    k8s-app: rocketmq
+spec:
+  ports:
+  - port: 8976
+    name: namesrv
+  selector:
+    k8s-app: rocketmq

@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: rocketmq
+spec:
+  replicas: 1
+  selector:
+    k8s-app: rocketmq
+  template:
+    metadata:
+        labels:
+	  k8s-app: rocketmq
+    spec:
+      containers:
+      - image: rocketmq:v3.5.8
+        name: rocketmq
+	ports:
+	- containerPort: 8976
+	  name: namesrv
+	  protocol: TCP
+        - containerPort: 10911
+	  name: broker
+	  protocol: TCP
+        volumeMounts:
+        - mountPath: /var/rocketmq/store
+          name: rockermq-data
+	- mountPath: /etc/rocketmq/
+	  name: config-volume
+      volumes:
+      - name: rockermq-data
+        persistentVolumeClaim:
+          claimName: rockermq-a
+      - name: config-volume
+        configMap:
+          name: rocketmq-config

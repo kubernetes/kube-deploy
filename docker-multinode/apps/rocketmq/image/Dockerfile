@@ -7,7 +7,7 @@ WORKDIR /home/admin/RocketMQ
 RUN mvn -Dmaven.test.skip=true clean package install assembly:assembly -U
 RUN ln -s target/alibaba-rocketmq-broker/alibaba-rocketmq devenv
 ADD broker.properties /etc/rocketmq/broker.properties
-ADD logback_broker.xml /home/admin/RocketMQ/devenv/conf/logback_broker.xml
+#ADD logback_broker.xml /home/admin/RocketMQ/devenv/conf/logback_broker.xml
 ADD play.sh /home/admin/RocketMQ/devenv/bin/play.sh
 ADD runserver.sh /home/admin/RocketMQ/devenv/bin/runserver.sh
 ADD runbroker.sh /home/admin/RocketMQ/devenv/bin/runbroker.sh

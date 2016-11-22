@@ -12,7 +12,7 @@ spec:
         k8s-app: rocketmq
     spec:
       containers:
-      - image: 58.240.173.172:5000/rocketmq:v3.5.8
+      - image: rocketmq:v3.5.9
         name: rocketmq
         ports:
         - containerPort: 9876

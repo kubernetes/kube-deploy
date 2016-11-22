@@ -6,7 +6,7 @@ metadata:
     k8s-app: rocketmq
 spec:
   ports:
-  - port: 8976
+  - port: 9876
     name: namesrv
   selector:
     k8s-app: rocketmq

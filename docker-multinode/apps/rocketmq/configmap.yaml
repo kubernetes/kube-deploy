@@ -1,0 +1,21 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: rocketmq-config
+  namespace: default
+data:
+  broker.properties: |-
+    storePathRootDir=/var/rocketmq/store
+    storePathCommitLog=/var/rocketmq/store/commitlog
+metadata:
+  name: mysql-config
+  namespace: default
+data:
+  dataDir=/var/mysql/store
+  dataLog=/var/mysql/store/log
+metadata:
+  name: redis-config
+  namespace: default
+data:
+  dataDir=/var/redis/store
+  dataLog=/var/redis/store/log

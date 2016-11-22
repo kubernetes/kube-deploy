@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: rocketmq-namesrv
+  labels:
+    k8s-app: rocketmq-namesrv
+    version: v3.5.8
+spec:
+  replicas: 1
+  template:
+    metadata:
+        labels:
+          k8s-app: rocketmq-namesrv
+    spec:
+      containers:
+      - image: 58.240.173.172:5000/rocketmq:v3.5.8
+        name: rocketmq-namesrv
+        command: ["/home/admin/RocketMQ/devenv/bin/mqnamesrv"]
+        ports:
+        - containerPort: 8976
+          name: listenport
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rocketmq-namesrv
+  labels:
+    k8s-app: rocketmq-namesrv
+    kubernetes.io/name: "RocketMQ"
+spec:
+  ports:
+  - port: 9876
+    protocol: TCP
+    targetPort: listenport
+  selector:
+    k8s-app: rocketmq-namesrv
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: rocketmq-brokera
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: rocketmq-brokera
+    spec:
+      containers:
+      - image: 58.240.173.172:5000/rocketmq:v3.5.8
+        name: rocketmq-brokera
+        env:
+          - name: JAVA_OPT
+            value: -server -Xms2g -Xmx2g -Xmn1g -XX:PermSize=128m -XX:MaxPermSize=320m
+               -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled
+               -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8 -XX:+DisableExplicitGC
+        command: ["sh"]
+        volumeMounts:
+        - mountPath: /home/admin/store
+          name: rockermq-data
+      volumes:
+      - name: rockermq-data
+        persistentVolumeClaim:
+          claimName: rockermq-a

@@ -109,6 +109,9 @@ kube::helpers::replace_mtu_bip(){
   local DOCKER_CONF=$1
   local SEARCH_FOR=$2
 
+  # Remove all newline escape characters ('\' at the end of line) in the configuration file to make next sed commands work reliably.
+  sed -e ':a' -e 'N' -e '$!ba' -e 's/\\\n[ \t]*/ /g' -i $DOCKER_CONF
+
   # Assuming is a $SEARCH_FOR statement already, and we should append the options if they do not exist
   if [[ -z $(grep -- "--mtu=" $DOCKER_CONF) ]]; then
     sed -e "s@$(grep "$SEARCH_FOR" $DOCKER_CONF)@$(grep "$SEARCH_FOR" $DOCKER_CONF) --mtu=${FLANNEL_MTU}@g" -i $DOCKER_CONF

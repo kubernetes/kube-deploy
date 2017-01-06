@@ -13,8 +13,6 @@
         labels: 
           name: "jenkins"
       spec: 
-        nodeSelector: 
-          domain: master
         containers: 
           - name: "jenkins"
             image: jenkins
@@ -24,16 +22,15 @@
             volumeMounts: 
               - name: "jenkins-data"
                 mountPath: "/var/jenkins_home"
-            livenessProbe:
-              httpGet:
-                path: /
-                port: 8080
-              initialDelaySeconds: 60
-              timeoutSeconds: 5
         volumes: 
           - name: "jenkins-data"
-            hostPath: 
-                path: /var/jenkins
+            cephfs:
+              monitors:
+              - 192.168.29.20:6789
+              user: admin
+              secretRef:
+                name: ceph-secret-admin
+              path: /jenkins_home
 ---
   apiVersion: "v1"
   kind: "Service"
@@ -48,7 +45,9 @@
         name: "http"
         port: 8080
         protocol: "TCP"
+        nodePort: 30900
       -
         name: "slave"
         port: 50000
         protocol: "TCP"
+        nodePort: 30800

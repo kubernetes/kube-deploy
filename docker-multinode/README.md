@@ -52,7 +52,9 @@ The scripts will output something like this when starting:
 +++ [0611 12:50:12] RESTART_POLICY is set to: unless-stopped
 +++ [0611 12:50:12] MASTER_IP is set to: 192.168.1.50
 +++ [0611 12:50:12] ARCH is set to: amd64
-+++ [0611 12:50:12] NET_INTERFACE is set to: eth0
++++ [0111 10:15:08] IP_ADDRESS is set to: 192.168.1.49
++++ [0111 10:15:08] USE_CNI is set to: false
++++ [0111 10:15:08] USE_CONTAINERIZED is set to: false
 ```
 
 Each of these options are overridable by `export`ing the values before running the script.

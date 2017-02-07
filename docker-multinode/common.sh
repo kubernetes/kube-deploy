@@ -273,7 +273,7 @@ kube::multinode::turndown(){
     kube::log::status "Killing docker bootstrap..."
 
     # Kill the bootstrap docker daemon and it's containers
-    docker -H ${BOOTSTRAP_DOCKER_SOCK} rm -f $(docker -H ${BOOTSTRAP_DOCKER_SOCK} ps -q) >/dev/null 2>/dev/null
+    docker -H ${BOOTSTRAP_DOCKER_SOCK} rm -f $(docker -H ${BOOTSTRAP_DOCKER_SOCK} ps -a -q) >/dev/null 2>/dev/null
     kill ${DOCKER_BOOTSTRAP_PID}
   fi
 

@@ -81,8 +81,28 @@ kube::bootstrap::restart_docker(){
       sleep 1
     done
     service docker start
+  elif kube::helpers::command_exists rc-service; then
+    DOCKER_CONF="/etc/conf.d/docker"
+    kube::helpers::backup_file ${DOCKER_CONF}
+
+    # Is there an uncommented DOCKER_OPTS line at all?
+    if [[ -z $(grep "DOCKER_OPTS" $DOCKER_CONF | grep -v "#") ]]; then
+      echo "DOCKER_OPTS=\"--mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET} \"" >> ${DOCKER_CONF}
+    else
+      kube::helpers::replace_mtu_bip ${DOCKER_CONF} "DOCKER_OPTS"
+    fi
+
+    kube::multinode::delete_bridge docker0
+    rc-service docker restart
+    while [[ $(docker ps 2>&1 1>/dev/null; echo $?) != 0 ]]; do
+      ((SECONDS++))
+      if [[ ${SECONDS} == ${TIMEOUT_FOR_SERVICES} ]]; then
+        kube::log::fatal "Error: docker failed to start with new flannel settings. Exiting..."
+      fi
+      sleep 1
+    done
   else
-    kube::log::fatal "Error: docker-bootstrap currently only supports ubuntu|debian|amzn|centos|systemd."
+    kube::log::fatal "Error: docker-bootstrap currently only supports ubuntu|debian|amzn|centos|systemd|openrc."
   fi
 
   kube::log::status "Restarted docker with the new flannel settings"
@@ -111,10 +131,12 @@ kube::helpers::replace_mtu_bip(){
 
   # Assuming is a $SEARCH_FOR statement already, and we should append the options if they do not exist
   if [[ -z $(grep -- "--mtu=" $DOCKER_CONF) ]]; then
-    sed -e "s@$(grep "$SEARCH_FOR" $DOCKER_CONF)@$(grep "$SEARCH_FOR" $DOCKER_CONF) --mtu=${FLANNEL_MTU}@g" -i $DOCKER_CONF
+    local OPT_STR=$(grep "$SEARCH_FOR" $DOCKER_CONF)
+    sed -e "s@$OPT_STR@${OPT_STR%\"} --mtu=${FLANNEL_MTU} \"@g" -i $DOCKER_CONF
   fi
   if [[ -z $(grep -- "--bip=" $DOCKER_CONF) ]]; then
-    sed -e "s@$(grep "$SEARCH_FOR" $DOCKER_CONF)@$(grep "$SEARCH_FOR" $DOCKER_CONF) --bip=${FLANNEL_SUBNET}@g" -i $DOCKER_CONF
+    local OPT_STR=$(grep "$SEARCH_FOR" $DOCKER_CONF)
+    sed -e "s@$OPT_STR@${OPT_STR%\"} --bip=${FLANNEL_SUBNET} \"@g" -i $DOCKER_CONF
   fi
 
   # Finds "--mtu=????" and replaces with "--mtu=${FLANNEL_MTU}"

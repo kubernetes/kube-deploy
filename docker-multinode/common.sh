@@ -38,6 +38,7 @@ kube::multinode::main(){
 
   LATEST_STABLE_K8S_VERSION=$(curl -sSL "https://storage.googleapis.com/kubernetes-release/release/stable.txt")
   K8S_VERSION=${K8S_VERSION:-${LATEST_STABLE_K8S_VERSION}}
+  REGISTRY=${REGISTRY:-"gcr.io/google_containers"}
 
   CURRENT_PLATFORM=$(kube::helpers::host_platform)
   ARCH=${ARCH:-${CURRENT_PLATFORM##*/}}
@@ -106,6 +107,7 @@ kube::multinode::log_variables() {
 
   # Output the value of the variables
   kube::log::status "K8S_VERSION is set to: ${K8S_VERSION}"
+  kube::log::status "REGISTRY is set to: ${REGISTRY}"
   kube::log::status "ETCD_VERSION is set to: ${ETCD_VERSION}"
   kube::log::status "FLANNEL_VERSION is set to: ${FLANNEL_VERSION}"
   kube::log::status "FLANNEL_IPMASQ is set to: ${FLANNEL_IPMASQ}"
@@ -131,7 +133,7 @@ kube::multinode::start_etcd() {
     --restart=${RESTART_POLICY} \
     ${ETCD_NET_PARAM} \
     -v /var/lib/kubelet/etcd:/var/etcd \
-    gcr.io/google_containers/etcd-${ARCH}:${ETCD_VERSION} \
+    ${REGISTRY}/etcd-${ARCH}:${ETCD_VERSION} \
     /usr/local/bin/etcd \
       --listen-client-urls=http://0.0.0.0:2379,http://0.0.0.0:4001 \
       --advertise-client-urls=http://localhost:2379,http://localhost:4001 \
@@ -208,7 +210,7 @@ kube::multinode::start_k8s_master() {
     --restart=${RESTART_POLICY} \
     --name kube_kubelet_$(kube::helpers::small_sha) \
     ${KUBELET_MOUNTS} \
-    gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
+    ${REGISTRY}/hyperkube-${ARCH}:${K8S_VERSION} \
     /hyperkube kubelet \
       --allow-privileged \
       --api-servers=http://localhost:8080 \
@@ -236,7 +238,7 @@ kube::multinode::start_k8s_worker() {
     --restart=${RESTART_POLICY} \
     --name kube_kubelet_$(kube::helpers::small_sha) \
     ${KUBELET_MOUNTS} \
-    gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
+    ${REGISTRY}/hyperkube-${ARCH}:${K8S_VERSION} \
     /hyperkube kubelet \
       --allow-privileged \
       --api-servers=http://${MASTER_IP}:8080 \
@@ -257,7 +259,7 @@ kube::multinode::start_k8s_worker_proxy() {
     --privileged \
     --name kube_proxy_$(kube::helpers::small_sha) \
     --restart=${RESTART_POLICY} \
-    gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
+    ${REGISTRY}/hyperkube-${ARCH}:${K8S_VERSION} \
     /hyperkube proxy \
         --master=http://${MASTER_IP}:8080 \
         --v=2

@@ -18,6 +18,7 @@ K8S_LOCATION_PATH=/home/vagrant/kubernetes
 
 # Install git and curl
 install_minimal_dependencies() {
+  apt-get update
   apt-get install -y git curl
 }
 

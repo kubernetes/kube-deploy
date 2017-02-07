@@ -32,7 +32,11 @@ kube::multinode::turndown
 if [[ ${USE_CNI} == "true" ]]; then
   kube::cni::ensure_docker_settings
 
-  kube::multinode::start_flannel
+  # hyperkube versions prior to v1.4.0-alpha.3 do not have a flannel daemonset
+  # TODO: remove later
+  if [[ $((VERSION_MINOR < 4)) == 1 ]]; then
+    kube::multinode::start_flannel
+  fi
 else
   kube::bootstrap::bootstrap_daemon
 

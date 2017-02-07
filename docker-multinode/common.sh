@@ -38,6 +38,7 @@ kube::multinode::main(){
 
   LATEST_STABLE_K8S_VERSION=$(curl -sSL "https://storage.googleapis.com/kubernetes-release/release/stable.txt")
   K8S_VERSION=${K8S_VERSION:-${LATEST_STABLE_K8S_VERSION}}
+  kube::helpers::parse_version ${K8S_VERSION}
 
   CURRENT_PLATFORM=$(kube::helpers::host_platform)
   ARCH=${ARCH:-${CURRENT_PLATFORM##*/}}
@@ -62,6 +63,13 @@ kube::multinode::main(){
   USE_CNI=${USE_CNI:-"false"}
   USE_CONTAINERIZED=${USE_CONTAINERIZED:-"false"}
   CNI_ARGS=""
+
+  # --containerized=true and mount /rootfs if above version 1.4
+  # so that the flannel ds pods can share the CNI configuration
+  # with kubelet over the /rootfs
+  if [[ $((VERSION_MINOR >= 4)) == 1 && ${USE_CNI} == "true" ]]; then
+    USE_CONTAINERIZED="true"
+  fi
 
   BOOTSTRAP_DOCKER_SOCK="unix:///var/run/docker-bootstrap.sock"
   BOOTSTRAP_DOCKER_PARAM="-H ${BOOTSTRAP_DOCKER_SOCK}"
@@ -90,20 +98,23 @@ kube::multinode::main(){
   FLANNEL_SUBNET_DIR=${FLANNEL_SUBNET_DIR:-/run/flannel}
 
   if [[ ${USE_CNI} == "true" ]]; then
-
     BOOTSTRAP_DOCKER_PARAM=""
     ETCD_NET_PARAM="-p 2379:2379 -p 2380:2380 -p 4001:4001"
+    CNI_CONFIG_PATH="/etc/cni/net.d"
+
+    # flannel will populate the cni configuration on the host
+    if [[ $((VERSION_MINOR >= 4)) == 1 ]]; then
+      CNI_CONFIG_PATH="/rootfs/etc/kubernetes/cni/net.d"
+    fi
+
     CNI_ARGS="\
       --network-plugin=cni \
-      --network-plugin-dir=/etc/cni/net.d"
+      --network-plugin-dir=${CNI_CONFIG_PATH}"
   fi
 }
 
 # Ensure everything is OK, docker is running and we're root
 kube::multinode::log_variables() {
-
-  kube::helpers::parse_version ${K8S_VERSION}
-
   # Output the value of the variables
   kube::log::status "K8S_VERSION is set to: ${K8S_VERSION}"
   kube::log::status "ETCD_VERSION is set to: ${ETCD_VERSION}"
@@ -208,7 +219,7 @@ kube::multinode::start_k8s_master() {
     --restart=${RESTART_POLICY} \
     --name kube_kubelet_$(kube::helpers::small_sha) \
     ${KUBELET_MOUNTS} \
-    gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
+    taimir93/hyperkube-amd64:v1.4.0 \
     /hyperkube kubelet \
       --allow-privileged \
       --api-servers=http://localhost:8080 \
@@ -236,7 +247,7 @@ kube::multinode::start_k8s_worker() {
     --restart=${RESTART_POLICY} \
     --name kube_kubelet_$(kube::helpers::small_sha) \
     ${KUBELET_MOUNTS} \
-    gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
+    taimir93/hyperkube-amd64:v1.4.0 \
     /hyperkube kubelet \
       --allow-privileged \
       --api-servers=http://${MASTER_IP}:8080 \
@@ -250,7 +261,6 @@ kube::multinode::start_k8s_worker() {
 
 # Start kube-proxy in a container, for a worker node
 kube::multinode::start_k8s_worker_proxy() {
-
   kube::log::status "Launching kube-proxy..."
   docker run -d \
     --net=host \
@@ -265,7 +275,6 @@ kube::multinode::start_k8s_worker_proxy() {
 
 # Turndown the local cluster
 kube::multinode::turndown(){
-
   # Check if docker bootstrap is running
   DOCKER_BOOTSTRAP_PID=$(ps aux | grep ${BOOTSTRAP_DOCKER_SOCK} | grep -v "grep" | awk '{print $2}')
   if [[ ! -z ${DOCKER_BOOTSTRAP_PID} ]]; then
@@ -323,7 +332,6 @@ kube::multinode::delete_bridge() {
 
 # Make shared kubelet directory
 kube::multinode::make_shared_kubelet_dir() {
-
   # This only has to be done when the host doesn't use systemd
   if ! kube::helpers::command_exists systemctl; then
     mkdir -p /var/lib/kubelet

@@ -18,7 +18,7 @@
 source $(dirname "${BASH_SOURCE}")/common.sh
 
 # Set MASTER_IP to localhost when deploying a master
-MASTER_IP=localhost
+MASTER_IP=$(ip -o -4 addr list $(ip -o -4 route show to default | awk '{print $5}' | head -1) | awk '{print $4}' | cut -d/ -f1 | head -1)
 
 kube::multinode::main
 
@@ -31,7 +31,11 @@ if [[ ${USE_CNI} == "true" ]]; then
 
   kube::multinode::start_etcd
 
-  kube::multinode::start_flannel
+  # hyperkube versions prior to v1.4.0-alpha.3 do not have a flannel daemonset
+  # TODO: remove later
+  if [[ $((VERSION_MINOR < 4)) == 1 ]]; then
+    kube::multinode::start_flannel
+  fi
 else
   kube::bootstrap::bootstrap_daemon
 

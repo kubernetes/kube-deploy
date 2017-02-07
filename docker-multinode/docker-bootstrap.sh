@@ -29,6 +29,7 @@ kube::bootstrap::bootstrap_daemon() {
     --bridge=none \
     --graph=/var/lib/docker-bootstrap \
     --exec-root=/var/run/docker-bootstrap \
+    ${BOOTSTRAP_DOCKER_DAEMON_PARAM} \
       2> /var/log/docker-bootstrap.log \
       1> /dev/null &
 

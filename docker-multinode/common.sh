@@ -77,12 +77,14 @@ kube::multinode::main(){
     CONTAINERIZED_FLAG=""
   fi
 
+  DOCKER_ROOT=${DOCKER_ROOT:-"/var/lib/docker"}
+
   KUBELET_MOUNTS="\
     ${ROOTFS_MOUNT} \
     -v /sys:/sys:rw \
     -v /var/run:/var/run:rw \
     -v /run:/run:rw \
-    -v /var/lib/docker:/var/lib/docker:rw \
+    -v ${DOCKER_ROOT}:${DOCKER_ROOT}:rw \
     ${KUBELET_MOUNT} \
     -v /var/log/containers:/var/log/containers:rw"
 
@@ -106,6 +108,7 @@ kube::multinode::log_variables() {
 
   # Output the value of the variables
   kube::log::status "K8S_VERSION is set to: ${K8S_VERSION}"
+  kube::log::status "DOCKER_ROOT is set to: ${DOCKER_ROOT}"
   kube::log::status "ETCD_VERSION is set to: ${ETCD_VERSION}"
   kube::log::status "FLANNEL_VERSION is set to: ${FLANNEL_VERSION}"
   kube::log::status "FLANNEL_IPMASQ is set to: ${FLANNEL_IPMASQ}"

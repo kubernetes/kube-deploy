@@ -38,7 +38,28 @@ v1.3.0 ships with support for amd64, arm and arm64. ppc64le isn't supported, due
 
 hyperkube was pushed for ppc64le at versions `v1.3.0-alpha.3` and `v1.3.0-alpha.4`, feel free to try them out, but there might be some unexpected bugs.
 
-### Options/configuration
+## Setup the master node
+
+The first step in the process is to initialize the master node.
+
+Clone the `kube-deploy` repo, and run [master.sh](master.sh) on the master machine _with root_:
+```console
+$ git clone https://github.com/kubernetes/kube-deploy
+$ cd kube-deploy/docker-multinode
+```
+
+Initialize the manifest files in `/etc/kubernetes`:
+```console
+$ ./init.sh
+```
+These files can be customized. However, in most cases this is not needed. Please note: up to version `v1.4.0` only the static manifests can be modified. Addons will be added in later releases.
+
+## Start master node
+
+Start the master:
+```console
+$ ./master.sh
+```
 
 The scripts will output something like this when starting:
 
@@ -57,17 +78,6 @@ The scripts will output something like this when starting:
 
 Each of these options are overridable by `export`ing the values before running the script.
 
-## Setup the master node
-
-The first step in the process is to initialize the master node.
-
-Clone the `kube-deploy` repo, and run [master.sh](master.sh) on the master machine _with root_:
-
-```console
-$ git clone https://github.com/kubernetes/kube-deploy
-$ cd kube-deploy/docker-multinode
-$ ./master.sh
-```
 
 First, the `bootstrap` docker daemon is started, then `etcd` and `flannel` are started as containers in the bootstrap daemon.
 Then, the main docker daemon is restarted, and this is an OS/distro-specific tasks, so if it doesn't work for your distro, feel free to contribute!

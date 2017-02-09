@@ -22,6 +22,17 @@ MASTER_IP=localhost
 
 kube::multinode::main
 
+# check if init script was run and matches the desired K8S version
+if [[ -z $(ls /etc/kubernetes/) ]]; then
+  echo "Please run init.sh to create manifest files in /etc/kubernetes."
+  exit 1
+fi
+K8S_VERSION_IN_MANIFEST=$(sed -n 's/.*hyperkube.*\(v.*\)\".*,/\1/p' /etc/kubernetes/manifests-multi/master-multi.json | head -1)
+if [[ $K8S_VERSION != $K8S_VERSION_IN_MANIFEST ]]; then
+  echo "Please run init.sh to create manifest files that match to the Kubernetes version $K8S_VERSION"
+  exit 1
+fi
+
 kube::multinode::log_variables
 
 kube::multinode::turndown

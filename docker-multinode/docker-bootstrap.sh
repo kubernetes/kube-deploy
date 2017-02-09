@@ -19,18 +19,37 @@
 # Start a docker bootstrap for running etcd and flannel
 kube::bootstrap::bootstrap_daemon() {
 
-  kube::log::status "Launching docker bootstrap..."
-
-  docker daemon \
-    -H ${BOOTSTRAP_DOCKER_SOCK} \
+  BOOTSTRAP_DOCKER_OPTS="-H ${BOOTSTRAP_DOCKER_SOCK} \
     -p /var/run/docker-bootstrap.pid \
     --iptables=false \
     --ip-masq=false \
     --bridge=none \
     --graph=/var/lib/docker-bootstrap \
-    --exec-root=/var/run/docker-bootstrap \
-      2> /var/log/docker-bootstrap.log \
-      1> /dev/null &
+    --exec-root=/var/run/docker-bootstrap"
+
+  if [ -x "$(command -v systemctl)" ]; then
+
+    kube::log::status "Installing docker bootstrap..."
+
+    sed "s|\$BOOTSTRAP_DOCKER_SOCK|${BOOTSTRAP_DOCKER_SOCK:7}|g" \
+      ./docker-bootstrap.socket > /lib/systemd/system/docker-bootstrap.socket
+
+    sed "s|\$BOOTSTRAP_DOCKER_OPTS|${BOOTSTRAP_DOCKER_OPTS}|g" \
+      ./docker-bootstrap.service > /lib/systemd/system/docker-bootstrap.service
+
+    systemctl daemon-reload &&
+      systemctl enable docker-bootstrap.service &&
+      systemctl start docker-bootstrap.service
+
+  else
+
+    kube::log::status "Launching docker bootstrap..."
+
+    docker daemon ${BOOTSTRAP_DOCKER_OPTS} \
+        2> /var/log/docker-bootstrap.log \
+        1> /dev/null &
+
+  fi
 
   # Wait for docker bootstrap to start by "docker ps"-ing every second
   local SECONDS=0
@@ -66,7 +85,7 @@ kube::bootstrap::restart_docker(){
   elif kube::helpers::command_exists apt-get; then
     DOCKER_CONF="/etc/default/docker"
     kube::helpers::backup_file ${DOCKER_CONF}
-        
+
     # Is there an uncommented DOCKER_OPTS line at all?
     if [[ -z $(grep "DOCKER_OPTS" $DOCKER_CONF | grep -v "#") ]]; then
       echo "DOCKER_OPTS=\"--mtu=${FLANNEL_MTU} --bip=${FLANNEL_SUBNET} \"" >> ${DOCKER_CONF}

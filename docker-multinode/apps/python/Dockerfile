@@ -16,6 +16,6 @@ RUN echo \
   && echo
 RUN easy_install pip
 RUN pip install --upgrade pip
-RUN pip install twisted httplib2 protobuf
+RUN pip install twisted httplib2 protobuf construct
 CMD ["sh"]
 

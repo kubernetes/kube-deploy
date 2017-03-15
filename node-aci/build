@@ -1,0 +1,39 @@
+#! /bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+set -o xtrace
+
+rm -f node.aci
+
+docker2aci docker://debian:jessie
+
+acbuild begin ./library-debian-jessie.aci
+
+acbuild run -- apt-get update
+acbuild run -- apt-get install -y -q apparmor curl iptables
+acbuild run -- apt-get autoremove
+acbuild run -- apt-get clean
+
+acbuild run -- \
+  curl -sSL --fail \
+    "https://get.docker.com/builds/Linux/x86_64/docker-1.11.1.tgz" \
+    -o /opt/docker.tgz
+acbuild run -- tar xzfv /opt/docker.tgz --strip=1 -C "/usr/local/bin"
+acbuild run -- rm /opt/docker.tgz
+
+acbuild run -- \
+  curl -sSL --fail \
+    "https://storage.googleapis.com/kubernetes-release/release/v1.3.0-alpha.4/bin/linux/amd64/kubectl" \
+    -o "/usr/local/bin/kubectl"
+acbuild run -- chmod +x "/usr/local/bin/kubectl"
+
+acbuild run -- \
+  curl -sSL --fail \
+    "https://storage.googleapis.com/kubernetes-release/release/v1.3.0-alpha.4/bin/linux/amd64/kubelet" \
+    -o "/usr/local/bin/kubelet"
+acbuild run -- chmod +x "/usr/local/bin/kubelet"
+
+acbuild write node.aci
+acbuild end

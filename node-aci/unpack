@@ -1,0 +1,31 @@
+#! /bin/bash
+
+set -o nounset
+set -o errexit
+set -o pipefail
+
+ROOTFS=/opt/kubelet/rootfs
+
+mount_in() {
+  local path="${1}"
+  local shared="${2:-false}"
+  mkdir -p "${path}"
+  mkdir -p "${ROOTFS}${path}"
+  mount --rbind "${path}" "${ROOTFS}${path}"
+  if [[ "${shared}" == "true" ]]; then
+    mount --bind "${ROOTFS}${path}" "${ROOTFS}${path}"
+    mount --make-shared "${ROOTFS}${path}"
+  fi
+}
+
+mkdir -p /opt/kubelet
+tar xzvf node.aci -C /opt/kubelet
+
+mount_in /proc
+mount_in /sys
+mount_in /dev
+mount_in /run
+mount_in /var/run
+mount_in /etc
+mount_in /var/lib/docker
+mount_in /var/lib/kubelet true

@@ -1,0 +1,18 @@
+[Unit]
+Description=Kubernetes Kubelet Server
+Documentation=https://github.com/kubernetes/kubernetes
+After=network.target docker.socket
+
+[Service]
+RootDirectory=/opt/kubelet/rootfs
+ExecStart=/usr/local/bin/kubelet \
+            --address=0.0.0.0 \
+            --allow-privileged=true \
+            --enable-server \
+            --config=/etc/kubernetes/manifests \
+            --cluster-dns=10.0.0.10 \
+            --cluster-domain=cluster.local \
+            --v=2
+
+[Install]
+WantedBy=multi-user.target

@@ -12,7 +12,9 @@
         name: "jenkins"
         labels: 
           name: "jenkins"
-      spec: 
+      spec:
+        nodeSelector:
+          kubernetes.io/hostname: 192.168.29.20 
         containers: 
           - name: "jenkins"
             image: jenkins
@@ -24,13 +26,8 @@
                 mountPath: "/var/jenkins_home"
         volumes: 
           - name: "jenkins-data"
-            cephfs:
-              monitors:
-              - 192.168.29.20:6789
-              user: admin
-              secretRef:
-                name: ceph-secret
-              path: /jenkins_home
+            hostPath: 
+              path: /var/lib/jenkins
 ---
   apiVersion: "v1"
   kind: "Service"

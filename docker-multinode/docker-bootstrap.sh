@@ -25,6 +25,7 @@ kube::bootstrap::bootstrap_daemon() {
     -H ${BOOTSTRAP_DOCKER_SOCK} \
     -p /var/run/docker-bootstrap.pid \
     --iptables=false \
+    --insecure-registry=58.240.173.172:5000 \
     --ip-masq=false \
     --bridge=none \
     --graph=/var/lib/docker-bootstrap \

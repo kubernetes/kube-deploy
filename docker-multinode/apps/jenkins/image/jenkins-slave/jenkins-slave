@@ -22,10 +22,12 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 #  THE SOFTWARE.
 
-# Usage jenkins-slave.sh [options] -url http://jenkins SECRET SLAVE_NAME
+# Usage jenkins-slave.sh [options] -url http://jenkins [SECRET] [AGENT_NAME]
 # Optional environment variables :
 # * JENKINS_TUNNEL : HOST:PORT for a tunnel to route TCP traffic to jenkins host, when jenkins can't be directly accessed over network
 # * JENKINS_URL : alternate jenkins URL
+# * JENKINS_SECRET : agent secret, if not set as an argument
+# * JENKINS_AGENT_NAME : agent name, if not set as an argument
 
 if [ $# -eq 1 ]; then
 
@@ -41,7 +43,7 @@ else
 		fi
 	fi
 
-	if [ ! -z "$JENKINS_URL" ]; then
+	if [ -n "$JENKINS_URL" ]; then
 		URL="-url $JENKINS_URL"
 	fi
 
@@ -49,6 +51,6 @@ else
 		echo "Warning: JnlpProtocol3 is disabled by default, use JNLP_PROTOCOL_OPTS to alter the behavior"
 		JNLP_PROTOCOL_OPTS="-Dorg.jenkinsci.remoting.engine.JnlpProtocol3.disabled=true"
 	fi
-        echo "java $JAVA_OPTS $JNLP_PROTOCOL_OPTS -cp /usr/share/jenkins/slave.jar hudson.remoting.jnlp.Main -headless -tunnel $JENKINS_TUNNEL -url $JENKINS_URL $JENKINS_SECRET $JENKINS_NAME"
-	exec java $JAVA_OPTS $JNLP_PROTOCOL_OPTS -cp /usr/share/jenkins/slave.jar hudson.remoting.jnlp.Main -headless -tunnel $JENKINS_TUNNEL -url $JENKINS_URL $JENKINS_SECRET $JENKINS_NAME
+
+	exec java $JAVA_OPTS $JNLP_PROTOCOL_OPTS -cp /usr/share/jenkins/slave.jar hudson.remoting.jnlp.Main -headless $TUNNEL $URL $JENKINS_SECRET $JENKINS_NAME
 fi

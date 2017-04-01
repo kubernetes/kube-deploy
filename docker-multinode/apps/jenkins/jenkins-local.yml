@@ -14,7 +14,7 @@
           name: "jenkins"
       spec:
         nodeSelector:
-          kubernetes.io/hostname: 192.168.29.20 
+          kubernetes.io/hostname: 192.168.29.16 
         containers: 
           - name: "jenkins"
             image: jenkins

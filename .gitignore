@@ -1,2 +1,3 @@
 .gitignore
 docker-multinode/test/.vagrant/
+/.project

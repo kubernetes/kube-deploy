@@ -17,7 +17,36 @@
 cd "$(dirname "${BASH_SOURCE}")"
 source cni-plugin.sh
 source docker-bootstrap.sh
+kube::multinode::remountcgroup(){
 
+  cat <<EOF >//usr/bin/remount-cgroup.sh 
+#!/bin/sh
+
+mount -o remount rw /sys/fs/cgroup
+ln -s /sys/fs/cgroup/cpu,cpuacct /sys/fs/cgroup/cpuacct,cpu
+EOF
+
+  chmod 777 /usr/bin/remount-cgroup.sh
+
+  cat <<EOF >//usr/lib/systemd/system/remount-cgroup.service
+[Unit]
+Description=remount cgroup
+Before=docker.service
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/remount-cgroup.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable remount-cgroup
+systemctl start remount-cgroup
+
+
+}
 kube::multinode::main(){
 
   # Require root
@@ -36,8 +65,8 @@ kube::multinode::main(){
     kube::log::fatal "Docker is not running on this machine!"
   fi
 
-  LATEST_STABLE_K8S_VERSION=$(curl -sSL "https://storage.googleapis.com/kubernetes-release/release/stable.txt")
-  K8S_VERSION=${K8S_VERSION:-${LATEST_STABLE_K8S_VERSION}}
+#  LATEST_STABLE_K8S_VERSION=$(curl -sSL "https://storage.googleapis.com/kubernetes-release/release/stable.txt")
+  K8S_VERSION=${K8S_VERSION:-v1.5.0}
 
   CURRENT_PLATFORM=$(kube::helpers::host_platform)
   ARCH=${ARCH:-${CURRENT_PLATFORM##*/}}
@@ -76,13 +105,17 @@ kube::multinode::main(){
     KUBELET_MOUNT="-v /var/lib/kubelet:/var/lib/kubelet:shared"
     CONTAINERIZED_FLAG=""
   fi
-
+  kube::multinode::remountcgroup
   KUBELET_MOUNTS="\
     ${ROOTFS_MOUNT} \
     -v /sys:/sys:rw \
     -v /var/run:/var/run:rw \
     -v /run:/run:rw \
     -v /var/lib/docker:/var/lib/docker:rw \
+    -v /sbin/modprobe:/sbin/modprobe:ro \
+    -v /lib/modules:/lib/modules:ro \
+    -v /etc/ceph:/etc/ceph:ro \
+    -v /dev:/dev:ro \
     ${KUBELET_MOUNT} \
     -v /var/log/containers:/var/log/containers:rw"
 
@@ -131,10 +164,10 @@ kube::multinode::start_etcd() {
     --restart=${RESTART_POLICY} \
     ${ETCD_NET_PARAM} \
     -v /var/lib/kubelet/etcd:/var/etcd \
-    gcr.io/google_containers/etcd-${ARCH}:${ETCD_VERSION} \
+     58.240.173.172:5000/etcd-${ARCH}:${ETCD_VERSION} \
     /usr/local/bin/etcd \
       --listen-client-urls=http://0.0.0.0:2379,http://0.0.0.0:4001 \
-      --advertise-client-urls=http://localhost:2379,http://localhost:4001 \
+      --advertise-client-urls=http://${MASTER_IP}:2379,http://${MASTER_IP}:4001 \
       --listen-peer-urls=http://0.0.0.0:2380 \
       --data-dir=/var/etcd/data
 
@@ -172,7 +205,7 @@ kube::multinode::start_flannel() {
     --privileged \
     -v /dev/net:/dev/net \
     -v ${FLANNEL_SUBNET_DIR}:${FLANNEL_SUBNET_DIR} \
-    quay.io/coreos/flannel:${FLANNEL_VERSION}-${ARCH} \
+     58.240.173.172:5000/flannel:${FLANNEL_VERSION}-${ARCH} \
     /opt/bin/flanneld \
       --etcd-endpoints=http://${MASTER_IP}:2379 \
       --ip-masq="${FLANNEL_IPMASQ}" \
@@ -245,7 +278,9 @@ kube::multinode::start_k8s_worker() {
       ${CNI_ARGS} \
       ${CONTAINERIZED_FLAG} \
       --hostname-override=${IP_ADDRESS} \
-      --v=2
+      --v=2 \
+     --minimum-container-ttl-duration=4320 \
+     --maximum-dead-containers-per-container=2
 }
 
 # Start kube-proxy in a container, for a worker node
@@ -337,7 +372,7 @@ kube::multinode::make_shared_kubelet_dir() {
 kube::multinode::create_kubeconfig(){
   # Create a kubeconfig.yaml file for the proxy daemonset
   mkdir -p /var/lib/kubelet/kubeconfig
-  sed -e "s|MASTER_IP|${MASTER_IP}|g" kubeconfig.yaml > /var/lib/kubelet/kubeconfig/kubeconfig.yaml
+  sed -e "s/MASTER_IP/${MASTER_IP}/g" kubeconfig.yaml > /var/lib/kubelet/kubeconfig/kubeconfig.yaml
 }
 
 # Check if a command is valid

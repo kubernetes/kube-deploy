@@ -1,0 +1,19 @@
+# An Ingress with 2 hosts and 3 endpoints
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /alb
+        backend:
+          serviceName: alb
+          servicePort: 8080
+      - path: /das
+        backend:
+          serviceName: das
+          servicePort: 7070

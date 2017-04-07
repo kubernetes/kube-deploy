@@ -21,10 +21,11 @@ kube::bootstrap::bootstrap_daemon() {
 
   kube::log::status "Launching docker bootstrap..."
 
-  docker daemon \
+  dockerd \
     -H ${BOOTSTRAP_DOCKER_SOCK} \
     -p /var/run/docker-bootstrap.pid \
     --iptables=false \
+    --insecure-registry=58.240.173.172:5000 \
     --ip-masq=false \
     --bridge=none \
     --graph=/var/lib/docker-bootstrap \
@@ -92,6 +93,7 @@ kube::bootstrap::restart_docker(){
 kube::bootstrap::restart_docker_systemd(){
 
   DOCKER_CONF=$(systemctl cat docker | head -1 | awk '{print $2}')
+  kube::log::status "docker_conf set to :${DOCKER_CONF}"
   kube::helpers::backup_file ${DOCKER_CONF}
   kube::helpers::replace_mtu_bip ${DOCKER_CONF} $(which docker)
 
@@ -107,14 +109,16 @@ kube::bootstrap::restart_docker_systemd(){
 
 kube::helpers::replace_mtu_bip(){
   local DOCKER_CONF=$1
-  local SEARCH_FOR=$2
-
+  local SEARCH_FOR=$(grep ExecStart ${DOCKER_CONF}|sed 's/\\//g')
+  #kube::log::status "replace_mtu_bip docker_conf set to :${DOCKER_CONF}"
+  #kube::log::status "replace_mtu_bip SEARCH_FOR set to :${SEARCH_FOR}"
+  local COMMAND_DOCKER=$SEARCH_FOR
   # Assuming is a $SEARCH_FOR statement already, and we should append the options if they do not exist
   if [[ -z $(grep -- "--mtu=" $DOCKER_CONF) ]]; then
-    sed -e "s@$(grep "$SEARCH_FOR" $DOCKER_CONF)@$(grep "$SEARCH_FOR" $DOCKER_CONF) --mtu=${FLANNEL_MTU}@g" -i $DOCKER_CONF
+    sed -e "s@$COMMAND_DOCKER@$COMMAND_DOCKER --mtu=${FLANNEL_MTU} @g" -i $DOCKER_CONF
   fi
   if [[ -z $(grep -- "--bip=" $DOCKER_CONF) ]]; then
-    sed -e "s@$(grep "$SEARCH_FOR" $DOCKER_CONF)@$(grep "$SEARCH_FOR" $DOCKER_CONF) --bip=${FLANNEL_SUBNET}@g" -i $DOCKER_CONF
+    sed -e "s@$COMMAND_DOCKER@$COMMAND_DOCKER --bip=${FLANNEL_SUBNET} @g" -i $DOCKER_CONF
   fi
 
   # Finds "--mtu=????" and replaces with "--mtu=${FLANNEL_MTU}"

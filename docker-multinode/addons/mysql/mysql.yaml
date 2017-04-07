@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+    role: service
+  name: mysql
+spec:
+  ports:
+    - port: 3306
+      targetPort: 3306
+      name: client
+    - port: 23306
+      targetPort: 23306
+      name: gossip
+  selector:
+    app: mysql
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mysql
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "slow"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 18Gi
+---
+
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: 58.240.173.172:5000/mysql:5.7.14
+        env:
+          - name:  MYSQL_ROOT_PASSWORD
+            value: Hxycjk123
+        ports:
+        - containerPort: 3306
+          name: client
+        resources:
+          limits:
+            cpu: "0.1"
+        volumeMounts:
+        - mountPath: /mysql-data
+          name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: mysql
+---
+
+

@@ -251,7 +251,9 @@ kube::multinode::start_k8s_master() {
       ${CNI_ARGS} \
       ${CONTAINERIZED_FLAG} \
       --hostname-override=${IP_ADDRESS} \
-      --v=2
+      --v=2 \
+     --minimum-container-ttl-duration=24h \
+     --maximum-dead-containers-per-container=2
 }
 
 # Start kubelet in a container, for a worker node
@@ -279,7 +281,7 @@ kube::multinode::start_k8s_worker() {
       ${CONTAINERIZED_FLAG} \
       --hostname-override=${IP_ADDRESS} \
       --v=2 \
-     --minimum-container-ttl-duration=4320 \
+     --minimum-container-ttl-duration=24h \
      --maximum-dead-containers-per-container=2
 }
 

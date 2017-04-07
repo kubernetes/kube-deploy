@@ -278,7 +278,9 @@ kube::multinode::start_k8s_worker() {
       ${CNI_ARGS} \
       ${CONTAINERIZED_FLAG} \
       --hostname-override=${IP_ADDRESS} \
-      --v=2
+      --v=2 \
+     --minimum-container-ttl-duration=4320 \
+     --maximum-dead-containers-per-container=2
 }
 
 # Start kube-proxy in a container, for a worker node

@@ -21,7 +21,7 @@ kube::bootstrap::bootstrap_daemon() {
 
   kube::log::status "Launching docker bootstrap..."
 
-  docker daemon \
+  dockerd \
     -H ${BOOTSTRAP_DOCKER_SOCK} \
     -p /var/run/docker-bootstrap.pid \
     --iptables=false \

@@ -37,7 +37,8 @@ kube::multinode::main(){
   fi
 
   LATEST_STABLE_K8S_VERSION=$(curl -sSL "https://storage.googleapis.com/kubernetes-release/release/stable.txt")
-  K8S_VERSION=${K8S_VERSION:-${LATEST_STABLE_K8S_VERSION}}
+#K8S_VERSION=${K8S_VERSION:-${LATEST_STABLE_K8S_VERSION}}
+  K8S_VERSION=${K8S_VERSION:-"v1.5.6"}
 
   CURRENT_PLATFORM=$(kube::helpers::host_platform)
   ARCH=${ARCH:-${CURRENT_PLATFORM##*/}}
@@ -45,10 +46,10 @@ kube::multinode::main(){
   if [[ ${ARCH} == "arm" ]]; then
     ETCD_VERSION=${ETCD_VERSION:-"2.2.5"}
   else
-    ETCD_VERSION=${ETCD_VERSION:-"3.0.4"}
+    ETCD_VERSION=${ETCD_VERSION:-"3.0.17"}
   fi
 
-  FLANNEL_VERSION=${FLANNEL_VERSION:-"v0.6.1"}
+  FLANNEL_VERSION=${FLANNEL_VERSION:-"v0.7.0"}
   FLANNEL_IPMASQ=${FLANNEL_IPMASQ:-"true"}
   FLANNEL_BACKEND=${FLANNEL_BACKEND:-"udp"}
   FLANNEL_NETWORK=${FLANNEL_NETWORK:-"10.1.0.0/16"}
@@ -88,6 +89,7 @@ kube::multinode::main(){
 
   # Paths
   FLANNEL_SUBNET_DIR=${FLANNEL_SUBNET_DIR:-/run/flannel}
+  KUBECONFIG_DIR=${KUBECONFIG_DIR:-/var/lib/kubelet/kubeconfig}
 
   if [[ ${USE_CNI} == "true" ]]; then
 
@@ -211,8 +213,9 @@ kube::multinode::start_k8s_master() {
     gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
     /hyperkube kubelet \
       --allow-privileged \
-      --api-servers=http://localhost:8080 \
-      --config=/etc/kubernetes/manifests-multi \
+      --require-kubeconfig \
+      --kubeconfig=${KUBECONFIG_DIR}/kubeconfig.yaml \
+      --pod-manifest-path=/etc/kubernetes/manifests-multi \
       --cluster-dns=10.0.0.10 \
       --cluster-domain=cluster.local \
       ${CNI_ARGS} \
@@ -239,7 +242,8 @@ kube::multinode::start_k8s_worker() {
     gcr.io/google_containers/hyperkube-${ARCH}:${K8S_VERSION} \
     /hyperkube kubelet \
       --allow-privileged \
-      --api-servers=http://${MASTER_IP}:8080 \
+      --require-kubeconfig \
+      --kubeconfig=${KUBECONFIG_DIR}/kubeconfig.yaml \
       --cluster-dns=10.0.0.10 \
       --cluster-domain=cluster.local \
       ${CNI_ARGS} \

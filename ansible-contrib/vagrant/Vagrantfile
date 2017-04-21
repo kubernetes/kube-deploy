@@ -1,0 +1,228 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+require "yaml"
+
+### This is a new provider, different then cloudbau's.
+### RUN: vagrant plugin uninstall vagrant-openstack-plugin"
+### Then RUN: "vagrant plugin install vagrant-openstack-provider"
+require 'vagrant-openstack-provider'
+
+$num_nodes = (ENV['NUM_NODES'] || 2).to_i
+$ansible_tags = ENV['ANSIBLE_TAGS']
+# OS image to use. Currently supported:
+# - "centos7" on openstack, libvirt, virtualbox
+# - "coreos" on virtualbox
+$os_image = (ENV['OS_IMAGE'] || "centos7").to_sym
+
+$coreos_update_channel = "stable"
+$coreos_image_version = "current"
+
+VAGRANTFILE_API_VERSION = "2"
+
+# Openstack providers are best used with latest versions.
+Vagrant.require_version ">= 1.7"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # By default, Vagrant 1.7+ automatically inserts a different
+  # insecure keypair for each new VM created. The easiest way
+  # to use the same keypair for all the machines is to disable
+  # this feature and rely on the legacy insecure key.
+  config.ssh.insert_key = false
+
+  # This explicitly sets the order that vagrant will use by default if no --provider given
+  config.vm.provider "openstack"
+  config.vm.provider "libvirt"
+  config.vm.provider "virtualbox"
+
+  def set_openstack_box(config)
+    case $os_image
+    when :centos7
+      # common config
+      config.vm.box = "dummy"
+      config.vm.box_url = "https://github.com/cloudbau/vagrant-openstack-plugin/raw/master/dummy.box"
+    end
+  end
+
+  def set_vbox_box(config)
+    case $os_image
+    when :centos7
+      config.vm.box = "centos/7"
+    when :coreos
+      config.vm.box = "coreos-%s" % $coreos_update_channel
+      if $coreos_image_version != "current"
+        config.vm.box_version = $coreos_image_version
+      end
+      config.vm.box_url = "https://storage.googleapis.com/%s.release.core-os.net/amd64-usr/%s/coreos_production_vagrant.json" %
+        [$update_channel, $image_version]
+    end
+  end
+
+  def set_libvirt_box(config)
+    case $os_image
+    when :centos7
+      config.vm.box = "kube-centos-7"
+      config.vm.box_url = "http://cloud.centos.org/centos/7/vagrant/x86_64/images/CentOS-7.LibVirt.box"
+    end
+  end
+
+  def set_openstack(os, config, n)
+    set_openstack_box(config)
+
+    # this crap is to make it not fail if the file doesn't exist (which is ok if we are using a different provisioner)
+    __filename = File.join(File.dirname(__FILE__), "openstack_config.yml")
+    if File.exist?(__filename)
+      _config = YAML.load(File.open(__filename, File::RDONLY).read)
+    else
+      _config = Hash.new("")
+      _config['security_group'] = []
+    end
+
+    config.ssh.username = "fedora"
+    config.ssh.private_key_path = "~/.ssh/id_rsa"
+    config.vm.boot_timeout = 60*10
+
+    ### The below parameters need to be modified per your openstack instance.
+    os.username         = _config['os_username']
+    os.password         = _config['os_password']
+    os.tenant_name      = _config['os_tenant']
+    os.keypair_name     = _config['os_ssh_key_name']
+    os.openstack_auth_url = _config['os_auth_url']
+    os.region           = _config['os_region_name']
+    os.floating_ip_pool = _config['os_floating_ip_pool']
+    os.flavor           = _config['os_flavor']
+    os.image            = _config['os_image']
+    os.security_groups  = _config['os_security_groups']
+    os.server_name = n.vm.hostname
+  end
+
+  def set_vbox(vb, config)
+    set_vbox_box(config)
+
+    config.vm.network "private_network", type: "dhcp"
+    vb.gui = false
+    vb.memory = 2048
+    vb.cpus = 2
+
+    # Use faster paravirtualized networking
+    vb.customize ["modifyvm", :id, "--nictype1", "virtio"]
+    vb.customize ["modifyvm", :id, "--nictype2", "virtio"]
+  end
+
+  def set_libvirt(lv, config)
+    set_libvirt_box(config)
+
+    lv.memory = 2048
+    lv.cpus = 2
+    lv.nested = true
+    lv.volume_cache = 'none'
+  end
+
+  def set_provider(n)
+    n.vm.provider :openstack do |os, override|
+      set_openstack(os, override, n)
+    end
+    n.vm.provider :virtualbox do |vb, override|
+      set_vbox(vb, override)
+    end
+    n.vm.provider :libvirt do |lv, override|
+      set_libvirt(lv, override)
+    end
+  end
+
+  def set_common_ansible_options(ansible)
+    ansible.groups = $groups
+    ansible.limit = "all" #otherwise the metadata wont be there for ipv4?
+    ansible.tags = $ansible_tags unless $ansible_tags.nil?
+    ansible.raw_ssh_args = ['-o ControlMaster=no']
+  end
+
+  def vagrant_ansible_provision(ansible, provider)
+    set_common_ansible_options(ansible)
+    # This set up the vagrant hosts before we run the main playbook
+    # Today this just creates /etc/hosts so machines can talk via their
+    # 'internal' IPs instead of the openstack public ip.
+    ansible.playbook = "./vagrant-ansible.yml"
+
+    if provider == :virtualbox
+      # On VirtualBox eth0 is used for NAT-ed internet connection,
+      # and actual connectivity with the host and other VMs is done
+      # using eth1 interface.
+      ansible.extra_vars = { public_iface: "eth1" }
+    end
+  end
+
+  def cluster_ansible_provision(ansible, provider)
+    set_common_ansible_options(ansible)
+
+    # This sets up both flannel and kube.
+    ansible.playbook = "../cluster.yml"
+
+    if provider == :virtualbox
+      # On VirtualBox eth0 is used for NAT-ed internet connection,
+      # and actual connectivity with the host and other VMs is done
+      # using eth1 interface.
+      ansible.extra_vars = { flannel_opts: "--iface=eth1" }
+    end
+  end
+
+  def run_ansible_provision(n)
+    n.vm.provider :openstack do |os, override|
+      override.vm.provision :ansible do |ansible|
+        yield ansible, :openstack
+      end
+    end
+    n.vm.provider :virtualbox do |vb, override|
+      override.vm.provision :ansible do |ansible|
+        yield ansible, :virtualbox
+      end
+    end
+    n.vm.provider :libvirt do |lv, override|
+      override.vm.provision :ansible do |ansible|
+        yield ansible, :libvirt
+      end
+    end
+  end
+
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  nodes = Array.new()
+  $num_nodes.times do |i|
+    # multi vm config
+    name = "kube-node-#{i+1}"
+    nodes.push(name)
+    config.vm.define "#{name}" do |n|
+      n.vm.hostname = name
+      set_provider(n)
+    end
+  end
+
+  # This is how we create the ansible inventory, see it in .vagrant
+  # if you want to debug, run 'VAGRANT_LOG=info vagrant up'
+  # and you'll see exactly how the cluster comes up via ansible inv.
+  $groups = {
+     "etcd" => ["kube-master"],
+     "masters" => ["kube-master"],
+     "nodes" => nodes,
+     "all_groups:children" => ["etcd","masters","nodes"],
+  }
+  if $os_image == :coreos
+    # On CoreOS we use custom Python in Ansible.
+    $groups["all_groups:vars"] = ['ansible_python_interpreter="PATH=/opt/bin:$PATH python"']
+  end
+
+  config.vm.define "kube-master" do |n|
+    name = "kube-master"
+    n.vm.hostname = name
+    set_provider(n)
+
+    if $ansible_tags.nil?
+      run_ansible_provision n do |ansible, provider|
+        vagrant_ansible_provision(ansible, provider)
+      end
+    end
+
+    run_ansible_provision n do |ansible, provider|
+      cluster_ansible_provision(ansible, provider)
+    end
+  end
+end

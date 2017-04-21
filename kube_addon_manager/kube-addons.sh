@@ -136,38 +136,10 @@ function create-resource-from-string() {
   return 1;
 }
 
-# $1 is the directory containing all of the docker images
-function load-docker-images() {
-  local success
-  local restart_docker
-  while true; do
-    success=true
-    restart_docker=false
-    for image in "$1/"*; do
-      timeout 30 docker load -i "${image}" &>/dev/null
-      rc=$?
-      if [[ "$rc" == 124 ]]; then
-        restart_docker=true
-      elif [[ "$rc" != 0 ]]; then
-        success=false
-      fi
-    done
-    if [[ "$success" == "true" ]]; then break; fi
-    if [[ "$restart_docker" == "true" ]]; then service docker restart; fi
-    sleep 15
-  done
-}
-
 # The business logic for whether a given object should be created
 # was already enforced by salt, and /etc/kubernetes/addons is the
 # managed result is of that. Start everything below that directory.
 echo "== Kubernetes addon manager started at $(date -Is) with ADDON_CHECK_INTERVAL_SEC=${ADDON_CHECK_INTERVAL_SEC} =="
-
-# Load any images that we may need. This is not needed for trusty master and
-# the way it restarts docker daemon does not work for trusty.
-if [[ "${trusty_master}" == "false" ]]; then
-  load-docker-images /srv/salt/kube-addons-images
-fi
 
 ensure_python
 
@@ -185,7 +157,7 @@ fi
 
 
 # Create the namespace that will be used to host the cluster-level add-ons.
-start_addon /etc/kubernetes/addons/namespace.yaml 100 10 "" &
+start_addon /opt/namespace.yaml 100 10 "" &
 
 # Wait for the default service account to be created in the kube-system namespace.
 token_found=""

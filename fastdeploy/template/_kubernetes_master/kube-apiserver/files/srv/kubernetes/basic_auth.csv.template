@@ -1,0 +1,1 @@
+{{ .Options.KUBE_PASSWORD }},{{ .Options.KUBE_USER }},admin

@@ -1,0 +1,2 @@
+DOCKER_OPTS="{{ .Options.BuildFlags "docker" }}"
+DOCKER_NOFILE=1000000

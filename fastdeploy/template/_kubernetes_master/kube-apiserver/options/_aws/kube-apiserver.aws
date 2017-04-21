@@ -1,0 +1,7 @@
+{
+  "kubeapiserver": {
+    "flags": {
+      "cloud-provider": "aws"
+    }
+  }
+}

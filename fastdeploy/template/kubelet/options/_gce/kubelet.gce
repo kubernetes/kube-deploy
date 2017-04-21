@@ -1,0 +1,11 @@
+{
+  "kubelet": {
+    "api-servers": "https://kubernetes-master",
+    "cloud-provider": "gce",
+    "system-cgroups": "/system",
+    "hairpin-mode": "promiscuous-bridge",
+    "runtime-cgroups": "/docker-daemon",
+    "kubelet-cgroups": "/kubelet",
+    "cgroup-root": "/"
+  }
+}

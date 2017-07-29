@@ -13,6 +13,16 @@ image public and copies it to all accessible regions (on AWS), and then shuts do
 Each of these stages can be controlled through flags
 (for example, you might not want use `--publish=false` for an internal image.)
 
+## Usage
+
+Check out `--help`, but these options control which operations we perform, and may be useful for debugging or publishing a lot of images:
+
+* `-down=true/false` – Set to shut down instance (if found) (default true).
+* `-up=true/false` – Set to create instance (if not found) (default true).
+* `-publish=true/false` – Set to whether we should make image public or not (default true).
+* `-replicate=true/false` – Set to copy the image to all regions (default true).
+* `-config=<configpath>` – Which config file to use. See `aws.yml` and `gce.yml` for examples.
+
 ## Guide
 
 1. Run `go get k8s.io/kube-deploy/imagebuilder`.
@@ -55,19 +65,3 @@ ${GOPATH}/bin/imagebuilder --config gce.yaml --v=8 --publish=false
 
 Note that because GCE does not currently support publishing images, you must pass `--publish=false`.  Also, images on
 GCE are global, so `replicate` does not actually need to do anything.
-
-
-Advanced options
-================
-
-Check out `--help`, but these options control which operations we perform,
-and may be useful for debugging or publishing a lot of images:
-
-* `--up=true/false`, `--down=true/false` control whether we try to create and terminate an instance to do the building
-
-* `--publish=true/false` controls whether we make the image public
-
-* `--replicate=true/false` controls whether we copy the image to all regions
-
-* `--config=<configpath>` lets you configure most options
-

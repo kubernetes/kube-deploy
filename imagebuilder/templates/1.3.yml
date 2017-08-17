@@ -95,6 +95,8 @@ packages:
     # So we can install the latest awscli
     - python-pip
 {{ end }}
+    # Gluster dependencies in order to use the gluster volume
+    - glusterfs-client
 
 plugins:
 {{ if eq .Cloud "gce" }}

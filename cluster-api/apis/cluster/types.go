@@ -127,9 +127,9 @@ const (
 
 	// UpdateClusterError indicates that an error was encountered
 	// when trying to update the cluster.
-	UpdateClusterError ClusterStatusError = "CreateError"
+	UpdateClusterError ClusterStatusError = "UpdateError"
 
 	// DeleteClusterError indicates that an error was encountered
 	// when trying to delete the cluster.
-	DeleteClusterError ClusterStatusError = "CreateError"
+	DeleteClusterError ClusterStatusError = "DeleteError"
 )

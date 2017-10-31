@@ -12,6 +12,7 @@ type ClusterSpec struct {
 	Cloud        string `json:"cloud"` // e.g. aws, azure, gcp
 	Project      string `json:"project"`
 	SSH          *SSHConfig `json:"ssh"`
+	KubernetesVersion KubernetesVersionInfo `json:"kubernetesVersion"`
 }
 
 type SSHConfig struct {
@@ -30,13 +31,11 @@ type APIServerConfig struct {
 	Port              uint32
 	CertExtraSANs     string
 	AuthorizationMode string
-	KubernetesVersion KubernetesVersionInfo
 }
 
 type ControllerManagerConfig struct {
 	LeaderElection    bool
 	Port              uint32
-	KubernetesVersion KubernetesVersionInfo
 }
 
 type EtcdConfig struct {
@@ -45,6 +44,6 @@ type EtcdConfig struct {
 }
 
 type KubernetesVersionInfo struct {
-	SemVer   string
-	Location string // e.g. https://storageapis.google.com/...
+	// Semantic version of Kubernetes to run.
+	Version string
 }

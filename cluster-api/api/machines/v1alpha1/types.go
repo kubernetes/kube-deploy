@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/pkg/api"
 )
 
 const MachineResourcePlural = "machines"
@@ -82,7 +81,7 @@ type MachineSpec struct {
 type MachineStatus struct {
 	// If the corresponding Node exists, this will point to its object.
 	// +optional
-	NodeRef *api.ObjectReference `json:"nodeRef,omitempty"`
+	NodeRef *corev1.ObjectReference `json:"nodeRef,omitempty"`
 
 	// When was this status last observed
 	// +optional

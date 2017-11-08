@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	MachinesCRDGroup   = "cluster-api.k8s.io"
+	MachinesCRDGroup   = "cluster.k8s.io"
 	MachinesCRDPlural  = "machines"
 	MachinesCRDVersion = "v1alpha1"
 	MachinesCRDName    = MachinesCRDPlural + "." + MachinesCRDGroup

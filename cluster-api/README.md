@@ -23,6 +23,24 @@ To learn more, see the full [Cluster API proposal][proposal].
 ### Prerequisites
 * `kubectl` is required, see [here](http://kubernetes.io/docs/user-guide/prereqs/).
 
+### Enabling network access to your cluster
+
+The cluster-api binary communicates over TCP port 443 with the master and
+nodes. Prior to creating your cluster, you will need to create a firewall
+rule in your GCP environment to enable this access:
+
+1. Log into the [GCP console](https://console.cloud.google.com)
+2. Click on the menu icon in the top left hand corner and select 
+   "VPC Network" and then "Firewall rules".
+3. Click on the "Create a firewall rule" button.
+4. Provide a name for the firewall rule.
+5. Under Targets, select "Specified Target Tags"
+6. For enhanced security, enter "https-server" in the "Target tags" field.
+7. Complete the "Source IP Ranges" field.
+8. For enhanced security, select "Specified protocols and ports" and enter
+   "tcp:443" in the text entry field.
+9. Click on the create button.
+
 ### Prototype implementations
 * [gcp machine controller](https://github.com/kubernetes/kube-deploy/blob/master/cluster-api-gcp/README.md)
 

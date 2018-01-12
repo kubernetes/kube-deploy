@@ -121,8 +121,8 @@ type MachineSpec struct {
 type MachineRole string
 
 const (
-	MasterRole = "Master"
-	NodeRole   = "Node"
+	MasterRole MachineRole = "Master"
+	NodeRole   MachineRole = "Node"
 )
 
 type MachineStatus struct {

@@ -1,0 +1,4 @@
+#!/bin/sh
+SHA=`git rev-parse HEAD`
+docker build -t $SHA . &&
+    docker run --rm --entrypoint tar $SHA -c /usr/bin/ct Dockerfile.build-scratch | docker build -f Dockerfile.build-scratch --tag coreos/ct -

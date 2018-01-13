@@ -1,0 +1,33 @@
+apiVersion: "machine.k8s.io/v1alpha1"
+kind: Machine
+metadata:
+  name: machine1
+spec:
+  metadata:
+    name: node1
+  providerConfig:
+    sshPublicKeys:
+      - "<< YOUR_PUBLIC_KEY >>"
+    cloudProvider: "aws"
+    cloudProviderSpec:
+      accessKeyId: "<< YOUR_ACCESS_KEY_ID >>"
+      secretAccessKey: "<< YOUR_SECRET_ACCESS_KEY_ID >>"
+      region: "eu-central-1"
+      availabilityZone: "eu-central-1a"
+      vpcId: "vpc-819f62e9"
+      subnetId: "subnet-2bff4f43"
+      instanceType: "t2.micro"
+      diskSize: 50
+      diskType: "gp2"
+      tags:
+        "KubernetesCluster": "6qsm86c2d"
+    operatingSystem: "coreos"
+    operatingSystemSpec:
+      disableAutoUpdate: true
+  roles:
+  - "Node"
+  versions:
+    kubelet: "v1.8.5"
+    containerRuntime:
+      name: "docker" # Not implemented atm - currently: coreos default docker
+      version: "1.13" # Not implemented atm - currently: coreos default docker

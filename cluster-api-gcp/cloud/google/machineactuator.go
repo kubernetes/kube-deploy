@@ -35,19 +35,21 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
-	clusterv1 "k8s.io/kube-deploy/cluster-api/api/cluster/v1alpha1"
-	"k8s.io/kube-deploy/cluster-api/client"
 	gceconfig "k8s.io/kube-deploy/cluster-api-gcp/cloud/google/gceproviderconfig"
 	gceconfigv1 "k8s.io/kube-deploy/cluster-api-gcp/cloud/google/gceproviderconfig/v1alpha1"
 	apierrors "k8s.io/kube-deploy/cluster-api-gcp/errors"
 	"k8s.io/kube-deploy/cluster-api-gcp/util"
+	clusterv1 "k8s.io/kube-deploy/cluster-api/api/cluster/v1alpha1"
+	"k8s.io/kube-deploy/cluster-api/client"
 	apiutil "k8s.io/kube-deploy/cluster-api/util"
 )
 
 const (
-	ProjectAnnotationKey = "gcp-project"
-	ZoneAnnotationKey    = "gcp-zone"
-	NameAnnotationKey    = "gcp-name"
+	ProjectAnnotationKey     = "gcp-project"
+	ZoneAnnotationKey        = "gcp-zone"
+	NameAnnotationKey        = "gcp-name"
+	ImageAnnotationKey       = "gcp-image"
+	MachineTypeAnnotationKey = "gcp-machineType"
 
 	UIDLabelKey       = "machine-crd-uid"
 	BootstrapLabelKey = "boostrap"
@@ -348,8 +350,13 @@ func (gce *GCEClient) Update(cluster *clusterv1.Cluster, goalMachine *clusterv1.
 	if err != nil {
 		return err
 	}
-
 	currentMachine := (*clusterv1.Machine)(status)
+
+	currentMachine, err = getMachineWithStatus(gce, currentMachine)
+	if err != nil {
+		return err
+	}
+
 	if currentMachine == nil {
 		instance, err := gce.instanceIfExists(goalMachine)
 		if err != nil {
@@ -457,6 +464,8 @@ func (gce *GCEClient) updateAnnotations(machine *clusterv1.Machine) error {
 	machine.ObjectMeta.Annotations[ProjectAnnotationKey] = project
 	machine.ObjectMeta.Annotations[ZoneAnnotationKey] = zone
 	machine.ObjectMeta.Annotations[NameAnnotationKey] = name
+	machine.ObjectMeta.Annotations[ImageAnnotationKey] = config.Image
+	machine.ObjectMeta.Annotations[MachineTypeAnnotationKey] = config.MachineType
 	_, err = gce.machineClient.Update(machine)
 	if err != nil {
 		return err
@@ -469,11 +478,12 @@ func (gce *GCEClient) updateAnnotations(machine *clusterv1.Machine) error {
 func (gce *GCEClient) requiresUpdate(a *clusterv1.Machine, b *clusterv1.Machine) bool {
 	// Do not want status changes. Do want changes that impact machine provisioning
 	return !reflect.DeepEqual(a.Spec.ObjectMeta, b.Spec.ObjectMeta) ||
-		!reflect.DeepEqual(a.Spec.ProviderConfig, b.Spec.ProviderConfig) ||
 		!reflect.DeepEqual(a.Spec.Roles, b.Spec.Roles) ||
 		!reflect.DeepEqual(a.Spec.Versions, b.Spec.Versions) ||
 		a.ObjectMeta.Name != b.ObjectMeta.Name ||
-		a.ObjectMeta.UID != b.ObjectMeta.UID
+		a.ObjectMeta.UID != b.ObjectMeta.UID ||
+		a.ObjectMeta.Annotations[NameAnnotationKey] != b.ObjectMeta.Annotations[NameAnnotationKey] ||
+		a.ObjectMeta.Annotations[MachineTypeAnnotationKey] != b.ObjectMeta.Annotations[MachineTypeAnnotationKey]
 }
 
 // Gets the instance represented by the given machine
@@ -672,4 +682,42 @@ func getSubnet(netRange clusterv1.NetworkRanges) string {
 		return ""
 	}
 	return netRange.CIDRBlocks[0]
+}
+
+func getMachineWithStatus(gce *GCEClient, machine *clusterv1.Machine) (*clusterv1.Machine, error) {
+	actualMachine := machine.DeepCopy()
+
+	if machine.ObjectMeta.Annotations == nil {
+		glog.Infof("no machine annotations found for machine %v. Inititalizing.", machine.ObjectMeta.Name)
+		actualMachine.ObjectMeta.Annotations = make(map[string]string)
+		return actualMachine, nil
+	}
+
+	project := machine.ObjectMeta.Annotations[ProjectAnnotationKey]
+	instanceName := machine.ObjectMeta.Annotations[NameAnnotationKey]
+	instanceZone := machine.ObjectMeta.Annotations[ZoneAnnotationKey]
+
+	// Get the actual GCE VM
+	instance, err := gce.service.Instances.Get(project, instanceZone, instanceName).Do()
+	if err != nil {
+		// TODO: Use formal way to check for error code 404
+		if strings.Contains(err.Error(), "Error 404") {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	machineType := strings.Split(instance.MachineType, "/")
+	zone := strings.Split(instance.Zone, "/")
+	// image := strings.Split(instance.Image, "/")
+
+	instanceMachineType := machineType[len(machineType)-1]
+	instanceZoneName := zone[len(zone)-1]
+	// instanceImage := image[len(image)-1]
+
+	// actualMachine.ObjectMeta.Annotations[ImageAnnotationKey] = config.Image
+	actualMachine.ObjectMeta.Annotations[MachineTypeAnnotationKey] = instanceMachineType
+	actualMachine.ObjectMeta.Annotations[ZoneAnnotationKey] = instanceZoneName
+
+	return actualMachine, nil
 }

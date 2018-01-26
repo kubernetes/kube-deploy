@@ -18,8 +18,10 @@ package google
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -346,18 +348,20 @@ func (gce *GCEClient) Update(cluster *clusterv1.Cluster, goalMachine *clusterv1.
 		return gce.handleMachineError(goalMachine, verr)
 	}
 
+	glog.Infof("Update == goalMachine = %+v", goalMachine)
+
 	status, err := gce.instanceStatus(goalMachine)
 	if err != nil {
 		return err
 	}
+	glog.Infof("Update == status = %+v", status)
 	currentMachine := (*clusterv1.Machine)(status)
-
-	currentMachine, err = getMachineWithStatus(gce, currentMachine)
 	if err != nil {
 		return err
 	}
 
 	if currentMachine == nil {
+		glog.Infof("Update == currentMachine not found... getting gce instance if exists.")
 		instance, err := gce.instanceIfExists(goalMachine)
 		if err != nil {
 			return err
@@ -369,6 +373,10 @@ func (gce *GCEClient) Update(cluster *clusterv1.Cluster, goalMachine *clusterv1.
 			return fmt.Errorf("Cannot retrieve current state to update machine %v", goalMachine.ObjectMeta.Name)
 		}
 	}
+
+	glog.Infof("Update == currentMachine is not nil = %+v", currentMachine)
+	currentMachine, err = currentMachineActualStatus(gce, currentMachine)
+	glog.Infof("Back in update, currentMachine = %+v", currentMachine)
 
 	if !gce.requiresUpdate(currentMachine, goalMachine) {
 		return nil
@@ -464,8 +472,6 @@ func (gce *GCEClient) updateAnnotations(machine *clusterv1.Machine) error {
 	machine.ObjectMeta.Annotations[ProjectAnnotationKey] = project
 	machine.ObjectMeta.Annotations[ZoneAnnotationKey] = zone
 	machine.ObjectMeta.Annotations[NameAnnotationKey] = name
-	machine.ObjectMeta.Annotations[ImageAnnotationKey] = config.Image
-	machine.ObjectMeta.Annotations[MachineTypeAnnotationKey] = config.MachineType
 	_, err = gce.machineClient.Update(machine)
 	if err != nil {
 		return err
@@ -476,14 +482,17 @@ func (gce *GCEClient) updateAnnotations(machine *clusterv1.Machine) error {
 
 // The two machines differ in a way that requires an update
 func (gce *GCEClient) requiresUpdate(a *clusterv1.Machine, b *clusterv1.Machine) bool {
+	aConfig, _ := gce.providerconfig(a.Spec.ProviderConfig)
+	bConfig, _ := gce.providerconfig(b.Spec.ProviderConfig)
+	glog.Infof("requiresUpdate = a = %+v", a)
+	glog.Infof("requiresUpdate = b = %+v", b)
 	// Do not want status changes. Do want changes that impact machine provisioning
 	return !reflect.DeepEqual(a.Spec.ObjectMeta, b.Spec.ObjectMeta) ||
 		!reflect.DeepEqual(a.Spec.Roles, b.Spec.Roles) ||
 		!reflect.DeepEqual(a.Spec.Versions, b.Spec.Versions) ||
 		a.ObjectMeta.Name != b.ObjectMeta.Name ||
 		a.ObjectMeta.UID != b.ObjectMeta.UID ||
-		a.ObjectMeta.Annotations[NameAnnotationKey] != b.ObjectMeta.Annotations[NameAnnotationKey] ||
-		a.ObjectMeta.Annotations[MachineTypeAnnotationKey] != b.ObjectMeta.Annotations[MachineTypeAnnotationKey]
+		!reflect.DeepEqual(aConfig, bConfig)
 }
 
 // Gets the instance represented by the given machine
@@ -684,18 +693,22 @@ func getSubnet(netRange clusterv1.NetworkRanges) string {
 	return netRange.CIDRBlocks[0]
 }
 
-func getMachineWithStatus(gce *GCEClient, machine *clusterv1.Machine) (*clusterv1.Machine, error) {
-	actualMachine := machine.DeepCopy()
+type simpleEncoder struct{}
 
-	if machine.ObjectMeta.Annotations == nil {
-		glog.Infof("no machine annotations found for machine %v. Inititalizing.", machine.ObjectMeta.Name)
-		actualMachine.ObjectMeta.Annotations = make(map[string]string)
-		return actualMachine, nil
-	}
+func (simpleEncoder) Encode(obj runtime.Object, w io.Writer) error {
+	return json.NewEncoder(w).Encode(obj)
+}
 
-	project := machine.ObjectMeta.Annotations[ProjectAnnotationKey]
-	instanceName := machine.ObjectMeta.Annotations[NameAnnotationKey]
-	instanceZone := machine.ObjectMeta.Annotations[ZoneAnnotationKey]
+// Takes a Machine object representing the current state, and update it based on the actual
+// current state as reported by GCE, kubelet etc.
+func currentMachineActualStatus(gce *GCEClient, currentMachine *clusterv1.Machine) (*clusterv1.Machine, error) {
+	glog.Infof("currentMachineActualStatus.......")
+	glog.Infof("currentMachine = %+v", currentMachine)
+	glog.Infof("type of ProviderConfig = %+v", reflect.TypeOf(currentMachine.Spec.ProviderConfig))
+
+	project := currentMachine.ObjectMeta.Annotations[ProjectAnnotationKey]
+	instanceZone := currentMachine.ObjectMeta.Annotations[ZoneAnnotationKey]
+	instanceName := currentMachine.ObjectMeta.Annotations[NameAnnotationKey]
 
 	// Get the actual GCE VM
 	instance, err := gce.service.Instances.Get(project, instanceZone, instanceName).Do()
@@ -709,15 +722,21 @@ func getMachineWithStatus(gce *GCEClient, machine *clusterv1.Machine) (*clusterv
 
 	machineType := strings.Split(instance.MachineType, "/")
 	zone := strings.Split(instance.Zone, "/")
-	// image := strings.Split(instance.Image, "/")
 
-	instanceMachineType := machineType[len(machineType)-1]
-	instanceZoneName := zone[len(zone)-1]
-	// instanceImage := image[len(image)-1]
+	config, _ := gce.providerconfig(currentMachine.Spec.ProviderConfig)
+	glog.Infof("Old config %+v", config)
+	config.MachineType = machineType[len(machineType)-1]
+	config.Zone = zone[len(zone)-1]
 
-	// actualMachine.ObjectMeta.Annotations[ImageAnnotationKey] = config.Image
-	actualMachine.ObjectMeta.Annotations[MachineTypeAnnotationKey] = instanceMachineType
-	actualMachine.ObjectMeta.Annotations[ZoneAnnotationKey] = instanceZoneName
+	glog.Infof("Updated config %+v", config)
+	encoder := gce.codecFactory.EncoderForVersion(simpleEncoder{}, nil)
+	encodedConfig, _ := runtime.Encode(encoder, config)
 
-	return actualMachine, nil
+	// configJson, _ := json.Marshal(config)
+	// currentMachine.Spec.ProviderConfig = string(configJson)
+	currentMachine.Spec.ProviderConfig = string(encodedConfig)
+
+	glog.Infof("Updated currentMachine = %+v", currentMachine)
+	glog.Infof("type of ProviderConfig = %+v", reflect.TypeOf(currentMachine.Spec.ProviderConfig))
+	return currentMachine, nil
 }

@@ -24,11 +24,11 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"k8s.io/kube-deploy/cluster-api-gcp/util"
-	clusterv1 "k8s.io/kube-deploy/cluster-api/api/cluster/v1alpha1"
-	apiutil "k8s.io/kube-deploy/cluster-api/util"
+	clusterv1 "k8s.io/kube-deploy/ext-apiserver/pkg/apis/cluster/v1alpha1"
+	"k8s.io/kube-deploy/ext-apiserver/util"
 )
 
 const (
@@ -91,21 +91,21 @@ func (d *deployer) createCluster(c *clusterv1.Cluster, machines []*clusterv1.Mac
 		return err
 	}
 	glog.Info("Starting the machine controller...")
-	if err := d.machineDeployer.CreateMachineController(c, machines); err != nil {
-		return fmt.Errorf("can't create machine controller: %v", err)
-	}
+	//if err := d.machineDeployer.CreateMachineController(c, machines); err != nil {
+	//	return fmt.Errorf("can't create machine controller: %v", err)
+	//}
+	//
+	//if err := d.createClusterCRD(); err != nil {
+	//	return err
+	//}
 
-	if err := d.createClusterCRD(); err != nil {
+	if _, err := d.client.Clusters(apiv1.NamespaceDefault).Create(c); err != nil {
 		return err
 	}
 
-	if _, err := d.client.Clusters().Create(c); err != nil {
-		return err
-	}
-
-	if err := d.createMachineCRD(); err != nil {
-		return err
-	}
+	//if err := d.createMachineCRD(); err != nil {
+	//	return err
+	//}
 
 	if err := d.createMachines(machines); err != nil {
 		return err
@@ -113,57 +113,57 @@ func (d *deployer) createCluster(c *clusterv1.Cluster, machines []*clusterv1.Mac
 	return nil
 }
 
-func (d *deployer) createClusterCRD() error {
-	cs, err := util.NewClientSet(d.configPath)
-	if err != nil {
-		return err
-	}
-
-	success := false
-	for i := 0; i <= RetryAttempts; i++ {
-		if _, err = clusterv1.CreateClustersCRD(cs); err != nil {
-			glog.Info("Failure creating Clusters CRD (will retry).")
-			time.Sleep(SleepSecondsPerAttempt * time.Second)
-			continue
-		}
-		success = true
-		glog.Info("Clusters CRD created succuessfully!")
-		break
-	}
-
-	if !success {
-		return fmt.Errorf("error creating Clusters CRD: %v", err)
-	}
-	return nil
-}
-
-func (d *deployer) createMachineCRD() error {
-	cs, err := util.NewClientSet(d.configPath)
-	if err != nil {
-		return err
-	}
-
-	success := false
-	for i := 0; i <= RetryAttempts; i++ {
-		if _, err = clusterv1.CreateMachinesCRD(cs); err != nil {
-			glog.Info("Failure creating Machines CRD (will retry).")
-			time.Sleep(time.Duration(SleepSecondsPerAttempt) * time.Second)
-			continue
-		}
-		success = true
-		glog.Info("Machines CRD created successfully!")
-		break
-	}
-
-	if !success {
-		return fmt.Errorf("error creating Machines CRD: %v", err)
-	}
-	return nil
-}
+//func (d *deployer) createClusterCRD() error {
+//	cs, err := util.NewClientSet(d.configPath)
+//	if err != nil {
+//		return err
+//	}
+//
+//	success := false
+//	for i := 0; i <= RetryAttempts; i++ {
+//		if _, err = clusterv1.CreateClustersCRD(cs); err != nil {
+//			glog.Info("Failure creating Clusters CRD (will retry).")
+//			time.Sleep(SleepSecondsPerAttempt * time.Second)
+//			continue
+//		}
+//		success = true
+//		glog.Info("Clusters CRD created succuessfully!")
+//		break
+//	}
+//
+//	if !success {
+//		return fmt.Errorf("error creating Clusters CRD: %v", err)
+//	}
+//	return nil
+//}
+//
+//func (d *deployer) createMachineCRD() error {
+//	cs, err := util.NewClientSet(d.configPath)
+//	if err != nil {
+//		return err
+//	}
+//
+//	success := false
+//	for i := 0; i <= RetryAttempts; i++ {
+//		if _, err = clusterv1.CreateMachinesCRD(cs); err != nil {
+//			glog.Info("Failure creating Machines CRD (will retry).")
+//			time.Sleep(time.Duration(SleepSecondsPerAttempt) * time.Second)
+//			continue
+//		}
+//		success = true
+//		glog.Info("Machines CRD created successfully!")
+//		break
+//	}
+//
+//	if !success {
+//		return fmt.Errorf("error creating Machines CRD: %v", err)
+//	}
+//	return nil
+//}
 
 func (d *deployer) createMachines(machines []*clusterv1.Machine) error {
 	for _, machine := range machines {
-		m, err := d.client.Machines().Create(machine)
+		m, err := d.client.Machines(apiv1.NamespaceDefault).Create(machine)
 		if err != nil {
 			return err
 		}
@@ -177,7 +177,7 @@ func (d *deployer) createMachine(m *clusterv1.Machine) error {
 }
 
 func (d *deployer) deleteAllMachines() error {
-	machines, err := d.client.Machines().List(metav1.ListOptions{})
+	machines, err := d.client.Machines(apiv1.NamespaceDefault).List(metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -192,11 +192,11 @@ func (d *deployer) deleteAllMachines() error {
 
 func (d *deployer) delete(name string) error {
 	// TODO  https://github.com/kubernetes/kube-deploy/issues/390
-	return d.client.Machines().Delete(name, &metav1.DeleteOptions{})
+	return d.client.Machines(apiv1.NamespaceDefault).Delete(name, &metav1.DeleteOptions{})
 }
 
 func (d *deployer) listMachines() ([]*clusterv1.Machine, error) {
-	machines, err := d.client.Machines().List(metav1.ListOptions{})
+	machines, err := d.client.Machines(apiv1.NamespaceDefault).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +204,7 @@ func (d *deployer) listMachines() ([]*clusterv1.Machine, error) {
 }
 
 func (d *deployer) getCluster() (*clusterv1.Cluster, error) {
-	clusters, err := d.client.Clusters().List(metav1.ListOptions{})
+	clusters, err := d.client.Clusters(apiv1.NamespaceDefault).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +243,7 @@ func (d *deployer) copyKubeConfig(master *clusterv1.Machine) error {
 }
 
 func (d *deployer) initApiClient() error {
-	c, err := apiutil.NewApiClient(d.configPath)
+	c, err := util.NewApiClient(d.configPath)
 	if err != nil {
 		return err
 	}

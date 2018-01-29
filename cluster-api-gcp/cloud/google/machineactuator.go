@@ -542,6 +542,9 @@ func (gce *GCEClient) instanceIfExists(machine *clusterv1.Machine) (*compute.Ins
 
 func (gce *GCEClient) providerconfig(providerConfig string) (*gceconfig.GCEProviderConfig, error) {
 	obj, gvk, err := gce.codecFactory.UniversalDecoder().Decode([]byte(providerConfig), nil, nil)
+
+	glog.Infof("providerconfig method. obj = %+v", obj)
+
 	if err != nil {
 		return nil, fmt.Errorf("decoding failure: %v", err)
 	}
@@ -723,7 +726,14 @@ func currentMachineActualStatus(gce *GCEClient, currentMachine *clusterv1.Machin
 	machineType := strings.Split(instance.MachineType, "/")
 	zone := strings.Split(instance.Zone, "/")
 
-	config, _ := gce.providerconfig(currentMachine.Spec.ProviderConfig)
+
+	glog.Infof("raw ProviderConfig = %+v", currentMachine.Spec.ProviderConfig)
+
+	config, e := gce.providerconfig(currentMachine.Spec.ProviderConfig)
+	if e != nil {
+		glog.Errorf("gce.providerconfig error: %+v", e)
+	}
+
 	glog.Infof("Old config %+v", config)
 	config.MachineType = machineType[len(machineType)-1]
 	config.Zone = zone[len(zone)-1]

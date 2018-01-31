@@ -6,12 +6,7 @@ Read the following guide if you're interested in contributing to cluster-api.
 
 We'd love to accept your patches! Before we can take them, we have to jump a couple of legal hurdles.
 
-Please fill out either the individual or corporate Contributor License Agreement (CLA).
-
-  * If you are an individual writing original source code and you're sure you own the intellectual property, then you'll need to sign an [individual CLA](http://code.google.com/legal/individual-cla-v1.0.html).
-  * If you work for a company that wants to allow you to contribute your work, then you'll need to sign a [corporate CLA](http://code.google.com/legal/corporate-cla-v1.0.html).
-
-Follow either of the two links above to access the appropriate CLA and instructions for how to sign and return it. Once we receive it, we'll be able to accept your pull requests.
+Please fill out either the individual or corporate Contributor License Agreement (CLA). More information about the CLA and instructions for signing it [can be found here](https://github.com/kubernetes/community/blob/master/CLA.md).
 
 ***NOTE***: Only original source code from you and other people that have signed the CLA can be accepted into the repository.
 
@@ -23,7 +18,7 @@ If you're new to the project and want to help, but don't know where to start, we
 
 1. If you haven't already done so, sign a Contributor License Agreement (see details above).
 1. TODO: Read the [cluster-api development guide](todo.md).
-1. Fork the desired repo, develop and test your code changes.
+1. Fork the desired repo, develop and test your code changes. (TODO: we don't have tests yet. See `cluster-api-gcp` README for manual testing for now.)
 1. Submit a pull request.
 
 All changes must be code reviewed. Coding conventions and standards are explained in the official [developer docs](https://github.com/kubernetes/community/tree/master/contributors/devel). Expect reviewers to request that you avoid common [go style mistakes](https://github.com/golang/go/wiki/CodeReviewComments) in your PRs.

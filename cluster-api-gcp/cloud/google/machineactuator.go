@@ -47,9 +47,9 @@ import (
 )
 
 const (
-	ProjectAnnotationKey     = "gcp-project"
-	ZoneAnnotationKey        = "gcp-zone"
-	NameAnnotationKey        = "gcp-name"
+	ProjectAnnotationKey = "gcp-project"
+	ZoneAnnotationKey    = "gcp-zone"
+	NameAnnotationKey    = "gcp-name"
 
 	UIDLabelKey       = "machine-crd-uid"
 	BootstrapLabelKey = "boostrap"
@@ -116,7 +116,7 @@ func NewMachineActuator(kubeadmToken string, machineClient client.MachinesInterf
 			user:           user,
 		},
 		machineClient: machineClient,
-		serializer: json.NewSerializer(json.DefaultMetaFactory, scheme, scheme, true),
+		serializer:    json.NewSerializer(json.DefaultMetaFactory, scheme, scheme, true),
 	}, nil
 }
 
@@ -138,7 +138,6 @@ func (gce *GCEClient) CreateMachineController(cluster *clusterv1.Cluster, initia
 
 func (gce *GCEClient) Create(cluster *clusterv1.Cluster, machine *clusterv1.Machine) error {
 	config, err := gce.providerconfig(machine.Spec.ProviderConfig)
-	glog.Infof("Create.ProviderConfig = %+v", machine.Spec.ProviderConfig)
 	if err != nil {
 		return gce.handleMachineError(machine, apierrors.InvalidMachineConfiguration(
 			"Cannot unmarshal providerConfig field: %v", err))
@@ -354,9 +353,6 @@ func (gce *GCEClient) Update(cluster *clusterv1.Cluster, goalMachine *clusterv1.
 		return err
 	}
 	currentMachine := (*clusterv1.Machine)(status)
-	if err != nil {
-		return err
-	}
 
 	if currentMachine == nil {
 		instance, err := gce.instanceIfExists(goalMachine)
@@ -545,10 +541,10 @@ func (gce *GCEClient) instanceIfExists(machine *clusterv1.Machine) (*compute.Ins
 
 func (gce *GCEClient) providerconfig(providerConfig string) (*gceconfig.GCEProviderConfig, error) {
 	var obj gceconfigv1.GCEProviderConfig
-	_, _, err := gce.serializer.Decode(
-		[]byte(providerConfig),
-		&schema.GroupVersionKind{Group:"gceproviderconfig", Version:"v1alpha1", Kind:"GCEProviderConfig"},
-		&obj)
+	_, _, err := gce.serializer.Decode([]byte(providerConfig), &schema.GroupVersionKind{
+		Group:   gceconfigv1.GroupName,
+		Version: gceconfigv1.VersionName,
+		Kind:    reflect.TypeOf(obj).Name()}, &obj)
 	if err != nil {
 		return nil, fmt.Errorf("decoding failure: %v", err)
 	}

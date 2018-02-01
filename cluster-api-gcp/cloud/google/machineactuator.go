@@ -694,17 +694,8 @@ func getSubnet(netRange clusterv1.NetworkRanges) string {
 // Takes a Machine object representing the current state, and update it based on the actual
 // current state as reported by GCE, kubelet etc.
 func currentMachineActualStatus(gce *GCEClient, currentMachine *clusterv1.Machine) (*clusterv1.Machine, error) {
-	project := currentMachine.ObjectMeta.Annotations[ProjectAnnotationKey]
-	instanceZone := currentMachine.ObjectMeta.Annotations[ZoneAnnotationKey]
-	instanceName := currentMachine.ObjectMeta.Annotations[NameAnnotationKey]
-
-	// Get the actual GCE VM
-	instance, err := gce.service.Instances.Get(project, instanceZone, instanceName).Do()
+	instance, err := gce.instanceIfExists(currentMachine)
 	if err != nil {
-		// TODO: Use formal way to check for error code 404
-		if strings.Contains(err.Error(), "Error 404") {
-			return nil, nil
-		}
 		return nil, err
 	}
 

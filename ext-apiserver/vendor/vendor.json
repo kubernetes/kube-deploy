@@ -1,0 +1,31 @@
+{
+	"comment": "",
+	"ignore": "",
+	"package": [
+		{
+			"checksumSHA1": "vpq0v5H+qhtHOckbm8U98gO4/Eo=",
+			"path": "google.golang.org/api/compute/v1",
+			"revision": "778ecc7e1a521e75638be98345220b14a1856f5f",
+			"revisionTime": "2018-02-04T13:00:33Z"
+		},
+		{
+			"checksumSHA1": "PI++Xo73TjPiP/3aUVNLVLdg/5Y=",
+			"path": "google.golang.org/api/gensupport",
+			"revision": "778ecc7e1a521e75638be98345220b14a1856f5f",
+			"revisionTime": "2018-02-04T13:00:33Z"
+		},
+		{
+			"checksumSHA1": "dQSH9AiO9j6t+/xxdlpRZ87YCUM=",
+			"path": "google.golang.org/api/googleapi",
+			"revision": "778ecc7e1a521e75638be98345220b14a1856f5f",
+			"revisionTime": "2018-02-04T13:00:33Z"
+		},
+		{
+			"checksumSHA1": "el0n9UGu9RKsmf2sAojHtRR3lj8=",
+			"path": "google.golang.org/api/googleapi/internal/uritemplates",
+			"revision": "778ecc7e1a521e75638be98345220b14a1856f5f",
+			"revisionTime": "2018-02-04T13:00:33Z"
+		}
+	],
+	"rootPath": "k8s.io/kube-deploy/ext-apiserver"
+}

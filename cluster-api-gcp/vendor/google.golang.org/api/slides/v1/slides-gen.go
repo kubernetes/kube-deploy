@@ -4047,6 +4047,37 @@ type ReplaceAllShapesWithImageRequest struct {
 	// given text.
 	ContainsText *SubstringMatchCriteria `json:"containsText,omitempty"`
 
+	// ImageReplaceMethod: The image replace method.
+	//
+	// If you specify both a `replace_method` and an `image_replace_method`,
+	// the
+	// `image_replace_method` takes precedence.
+	//
+	// If you do not specify a value for `image_replace_method`, but specify
+	// a
+	// value for `replace_method`, then the specified `replace_method` value
+	// is
+	// used.
+	//
+	// If you do not specify either, then CENTER_INSIDE is used.
+	//
+	// Possible values:
+	//   "IMAGE_REPLACE_METHOD_UNSPECIFIED" - Unspecified image replace
+	// method. This value must not be used.
+	//   "CENTER_INSIDE" - Scales and centers the image to fit within the
+	// bounds of the original
+	// shape and maintains the image's aspect ratio. The rendered size of
+	// the
+	// image may be smaller than the size of the shape. This is the
+	// default
+	// method when one is not specified.
+	//   "CENTER_CROP" - Scales and centers the image to fill the bounds of
+	// the original shape.
+	// The image may be cropped in order to fill the shape. The rendered
+	// size of
+	// the image will be the same as that of the original shape.
+	ImageReplaceMethod string `json:"imageReplaceMethod,omitempty"`
+
 	// ImageUrl: The image URL.
 	//
 	// The image is fetched once at insertion time and a copy is stored
@@ -4071,6 +4102,11 @@ type ReplaceAllShapesWithImageRequest struct {
 	PageObjectIds []string `json:"pageObjectIds,omitempty"`
 
 	// ReplaceMethod: The replace method.
+	// Deprecated: use `image_replace_method` instead.
+	//
+	// If you specify both a `replace_method` and an `image_replace_method`,
+	// the
+	// `image_replace_method` takes precedence.
 	//
 	// Possible values:
 	//   "CENTER_INSIDE" - Scales and centers the image to fit within the
@@ -4395,6 +4431,11 @@ type Request struct {
 
 	// UpdateLineProperties: Updates the properties of a Line.
 	UpdateLineProperties *UpdateLinePropertiesRequest `json:"updateLineProperties,omitempty"`
+
+	// UpdatePageElementAltText: Updates the alt text title and/or
+	// description of a
+	// page element.
+	UpdatePageElementAltText *UpdatePageElementAltTextRequest `json:"updatePageElementAltText,omitempty"`
 
 	// UpdatePageElementTransform: Updates the transform of a page element.
 	UpdatePageElementTransform *UpdatePageElementTransformRequest `json:"updatePageElementTransform,omitempty"`
@@ -6691,6 +6732,55 @@ func (s *UpdateLinePropertiesRequest) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+// UpdatePageElementAltTextRequest: Updates the alt text title and/or
+// description of a
+// page element.
+type UpdatePageElementAltTextRequest struct {
+	// Description: The updated alt text description of the page element. If
+	// unset the existing
+	// value will be maintained. The description is exposed to screen
+	// readers
+	// and other accessibility interfaces. Only use human readable values
+	// related
+	// to the content of the page element.
+	Description string `json:"description,omitempty"`
+
+	// ObjectId: The object ID of the page element the updates are applied
+	// to.
+	ObjectId string `json:"objectId,omitempty"`
+
+	// Title: The updated alt text title of the page element. If unset
+	// the
+	// existing value will be maintained. The title is exposed to screen
+	// readers
+	// and other accessibility interfaces. Only use human readable values
+	// related
+	// to the content of the page element.
+	Title string `json:"title,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Description") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Description") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *UpdatePageElementAltTextRequest) MarshalJSON() ([]byte, error) {
+	type NoMethod UpdatePageElementAltTextRequest
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // UpdatePageElementTransformRequest: Updates the transform of a page
 // element.
 //
@@ -8096,6 +8186,8 @@ type PresentationsPagesGetThumbnailCall struct {
 // GetThumbnail: Generates a thumbnail of the latest version of the
 // specified page in the
 // presentation and returns a URL to the thumbnail image.
+//
+// This request counts as an expensive read request for quota purposes.
 func (r *PresentationsPagesService) GetThumbnail(presentationId string, pageObjectId string) *PresentationsPagesGetThumbnailCall {
 	c := &PresentationsPagesGetThumbnailCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.presentationId = presentationId
@@ -8228,7 +8320,7 @@ func (c *PresentationsPagesGetThumbnailCall) Do(opts ...googleapi.CallOption) (*
 	}
 	return ret, nil
 	// {
-	//   "description": "Generates a thumbnail of the latest version of the specified page in the\npresentation and returns a URL to the thumbnail image.",
+	//   "description": "Generates a thumbnail of the latest version of the specified page in the\npresentation and returns a URL to the thumbnail image.\n\nThis request counts as an expensive read request for quota purposes.",
 	//   "flatPath": "v1/presentations/{presentationId}/pages/{pageObjectId}/thumbnail",
 	//   "httpMethod": "GET",
 	//   "id": "slides.presentations.pages.getThumbnail",

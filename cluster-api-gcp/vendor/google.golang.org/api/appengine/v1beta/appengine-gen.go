@@ -546,6 +546,9 @@ type AutomaticScaling struct {
 	// CpuUtilization: Target scaling by CPU usage.
 	CpuUtilization *CpuUtilization `json:"cpuUtilization,omitempty"`
 
+	// CustomMetrics: Target scaling by user-provided metrics.
+	CustomMetrics []*CustomMetric `json:"customMetrics,omitempty"`
+
 	// DiskUtilization: Target scaling by disk usage.
 	DiskUtilization *DiskUtilization `json:"diskUtilization,omitempty"`
 
@@ -780,6 +783,46 @@ func (s *CertificateRawData) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+// CloudBuildOptions: Options for the build operations performed as a
+// part of the version deployment. Only applicable for App Engine
+// flexible environment when creating a version using source code
+// directly.
+type CloudBuildOptions struct {
+	// AppYamlPath: Path to the yaml file used in deployment, used to
+	// determine runtime configuration details.Required for flexible
+	// environment builds.See
+	// https://cloud.google.com/appengine/docs/standard/python/config/appref
+	// for more details.
+	AppYamlPath string `json:"appYamlPath,omitempty"`
+
+	// CloudBuildTimeout: The Cloud Build timeout used as part of any
+	// dependent builds performed by version creation. Defaults to 10
+	// minutes.
+	CloudBuildTimeout string `json:"cloudBuildTimeout,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "AppYamlPath") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "AppYamlPath") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *CloudBuildOptions) MarshalJSON() ([]byte, error) {
+	type NoMethod CloudBuildOptions
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // ContainerInfo: Docker image that is used to create a container and
 // start a VM instance for the version that you deploy. Only applicable
 // for instances running in the App Engine flexible environment.
@@ -862,6 +905,129 @@ func (s *CpuUtilization) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// CreateVersionMetadataV1Alpha: Metadata for the given
+// google.longrunning.Operation during a
+// google.appengine.v1alpha.CreateVersionRequest.
+type CreateVersionMetadataV1Alpha struct {
+	// CloudBuildId: The Cloud Build ID if one was created as part of the
+	// version create. @OutputOnly
+	CloudBuildId string `json:"cloudBuildId,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "CloudBuildId") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "CloudBuildId") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *CreateVersionMetadataV1Alpha) MarshalJSON() ([]byte, error) {
+	type NoMethod CreateVersionMetadataV1Alpha
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// CreateVersionMetadataV1Beta: Metadata for the given
+// google.longrunning.Operation during a
+// google.appengine.v1beta.CreateVersionRequest.
+type CreateVersionMetadataV1Beta struct {
+	// CloudBuildId: The Cloud Build ID if one was created as part of the
+	// version create. @OutputOnly
+	CloudBuildId string `json:"cloudBuildId,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "CloudBuildId") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "CloudBuildId") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *CreateVersionMetadataV1Beta) MarshalJSON() ([]byte, error) {
+	type NoMethod CreateVersionMetadataV1Beta
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// CustomMetric: Allows autoscaling based on Stackdriver metrics.
+type CustomMetric struct {
+	// Filter: Allows filtering on the metric's fields.
+	Filter string `json:"filter,omitempty"`
+
+	// MetricName: The name of the metric.
+	MetricName string `json:"metricName,omitempty"`
+
+	// SingleInstanceAssignment: May be used instead of target_utilization
+	// when an instance can handle a specific amount of work/resources and
+	// the metric value is equal to the current amount of work remaining.
+	// The autoscaler will try to keep the number of instances equal to the
+	// metric value divided by single_instance_assignment.
+	SingleInstanceAssignment float64 `json:"singleInstanceAssignment,omitempty"`
+
+	// TargetType: The type of the metric. Must be a string representing a
+	// Stackdriver metric type e.g. GAGUE, DELTA_PER_SECOND, etc.
+	TargetType string `json:"targetType,omitempty"`
+
+	// TargetUtilization: The target value for the metric.
+	TargetUtilization float64 `json:"targetUtilization,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Filter") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Filter") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *CustomMetric) MarshalJSON() ([]byte, error) {
+	type NoMethod CustomMetric
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+func (s *CustomMetric) UnmarshalJSON(data []byte) error {
+	type NoMethod CustomMetric
+	var s1 struct {
+		SingleInstanceAssignment gensupport.JSONFloat64 `json:"singleInstanceAssignment"`
+		TargetUtilization        gensupport.JSONFloat64 `json:"targetUtilization"`
+		*NoMethod
+	}
+	s1.NoMethod = (*NoMethod)(s)
+	if err := json.Unmarshal(data, &s1); err != nil {
+		return err
+	}
+	s.SingleInstanceAssignment = float64(s1.SingleInstanceAssignment)
+	s.TargetUtilization = float64(s1.TargetUtilization)
+	return nil
+}
+
 // DebugInstanceRequest: Request message for Instances.DebugInstance.
 type DebugInstanceRequest struct {
 	// SshKey: Public SSH key to add to the instance.
@@ -900,8 +1066,18 @@ func (s *DebugInstanceRequest) MarshalJSON() ([]byte, error) {
 // Deployment: Code and application artifacts used to deploy a version
 // to App Engine.
 type Deployment struct {
-	// Build: Google Cloud Container Builder build information.
+	// Build: Google Cloud Container Builder build information. Only
+	// applicable for instances running in the App Engine flexible
+	// environment.
 	Build *BuildInfo `json:"build,omitempty"`
+
+	// CloudBuildOptions: Options for any Google Cloud Container Builder
+	// builds created as a part of this deployment.Note that this is
+	// orthogonal to the build parameter, where the deployment depends on an
+	// already existing cloud build. These options will only be used if a
+	// new build is created, such as when deploying to the App Engine
+	// flexible environment using files or zip.
+	CloudBuildOptions *CloudBuildOptions `json:"cloudBuildOptions,omitempty"`
 
 	// Container: The Docker image for the container that runs the version.
 	// Only applicable for instances running in the App Engine flexible
@@ -2333,6 +2509,8 @@ func (s *OperationMetadataV1) MarshalJSON() ([]byte, error) {
 // OperationMetadataV1Alpha: Metadata for the given
 // google.longrunning.Operation.
 type OperationMetadataV1Alpha struct {
+	CreateVersionMetadata *CreateVersionMetadataV1Alpha `json:"createVersionMetadata,omitempty"`
+
 	// EndTime: Time that this operation completed.@OutputOnly
 	EndTime string `json:"endTime,omitempty"`
 
@@ -2358,20 +2536,22 @@ type OperationMetadataV1Alpha struct {
 	// @OutputOnly
 	Warning []string `json:"warning,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "EndTime") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// ForceSendFields is a list of field names (e.g.
+	// "CreateVersionMetadata") to unconditionally include in API requests.
+	// By default, fields with empty values are omitted from API requests.
+	// However, any non-pointer, non-interface field appearing in
+	// ForceSendFields will be sent to the server regardless of whether the
+	// field is empty or not. This may be used to include empty fields in
+	// Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "EndTime") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "CreateVersionMetadata") to
+	// include in API requests with the JSON null value. By default, fields
+	// with empty values are omitted from API requests. However, any field
+	// with an empty value appearing in NullFields will be sent to the
+	// server as null. It is an error if a field in this list has a
+	// non-empty value. This may be used to include null fields in Patch
+	// requests.
 	NullFields []string `json:"-"`
 }
 
@@ -2384,6 +2564,8 @@ func (s *OperationMetadataV1Alpha) MarshalJSON() ([]byte, error) {
 // OperationMetadataV1Beta: Metadata for the given
 // google.longrunning.Operation.
 type OperationMetadataV1Beta struct {
+	CreateVersionMetadata *CreateVersionMetadataV1Beta `json:"createVersionMetadata,omitempty"`
+
 	// EndTime: Time that this operation completed.@OutputOnly
 	EndTime string `json:"endTime,omitempty"`
 
@@ -2409,20 +2591,22 @@ type OperationMetadataV1Beta struct {
 	// @OutputOnly
 	Warning []string `json:"warning,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "EndTime") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// ForceSendFields is a list of field names (e.g.
+	// "CreateVersionMetadata") to unconditionally include in API requests.
+	// By default, fields with empty values are omitted from API requests.
+	// However, any non-pointer, non-interface field appearing in
+	// ForceSendFields will be sent to the server regardless of whether the
+	// field is empty or not. This may be used to include empty fields in
+	// Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "EndTime") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "CreateVersionMetadata") to
+	// include in API requests with the JSON null value. By default, fields
+	// with empty values are omitted from API requests. However, any field
+	// with an empty value appearing in NullFields will be sent to the
+	// server as null. It is an error if a field in this list has a
+	// non-empty value. This may be used to include null fields in Patch
+	// requests.
 	NullFields []string `json:"-"`
 }
 
@@ -2803,13 +2987,11 @@ func (s *SslSettings) MarshalJSON() ([]byte, error) {
 // environment.
 type StandardSchedulerSettings struct {
 	// MaxInstances: Maximum number of instances for an app version. Set to
-	// a non-positive value (0 by convention) to disable max_instances
-	// configuration.
+	// zero to disable max_instances configuration.
 	MaxInstances int64 `json:"maxInstances,omitempty"`
 
 	// MinInstances: Minimum number of instances for an app version. Set to
-	// a non-positive value (0 by convention) to disable min_instances
-	// configuration.
+	// zero to disable min_instances configuration.
 	MinInstances int64 `json:"minInstances,omitempty"`
 
 	// TargetCpuUtilization: Target CPU utilization ratio to maintain when
@@ -3349,6 +3531,10 @@ type Version struct {
 	// https://cloud.google.com/appengine/docs/standard/<language>/config/appref
 	RuntimeApiVersion string `json:"runtimeApiVersion,omitempty"`
 
+	// RuntimeChannel: The channel of the runtime to use. Only available for
+	// some runtimes. Defaults to the default channel.
+	RuntimeChannel string `json:"runtimeChannel,omitempty"`
+
 	// ServingStatus: Current serving status of this version. Only the
 	// versions with a SERVING status create instances and can be
 	// billed.SERVING_STATUS_UNSPECIFIED is an invalid value. Defaults to
@@ -3374,6 +3560,10 @@ type Version struct {
 	// Vm: Whether to deploy this version in a container on a virtual
 	// machine.
 	Vm bool `json:"vm,omitempty"`
+
+	// Zones: The choice of gce zones to use for this App Engine Flexible
+	// version.
+	Zones []string `json:"zones,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.

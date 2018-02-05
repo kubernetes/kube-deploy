@@ -3793,16 +3793,17 @@ func (s *GooglePrivacyDlpV2beta2FileSet) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-// GooglePrivacyDlpV2beta2Finding: Container structure describing a
-// single finding within a string or image.
+// GooglePrivacyDlpV2beta2Finding: Represents a piece of potentially
+// sensitive content.
 type GooglePrivacyDlpV2beta2Finding struct {
 	// CreateTime: Timestamp when finding was detected.
 	CreateTime string `json:"createTime,omitempty"`
 
-	// InfoType: The specific type of info the string might be.
+	// InfoType: The type of content that might have been found.
+	// Provided if requested by the `InspectConfig`.
 	InfoType *GooglePrivacyDlpV2beta2InfoType `json:"infoType,omitempty"`
 
-	// Likelihood: Estimate of how likely it is that the info_type is
+	// Likelihood: Estimate of how likely it is that the `info_type` is
 	// correct.
 	//
 	// Possible values:
@@ -3815,10 +3816,16 @@ type GooglePrivacyDlpV2beta2Finding struct {
 	//   "VERY_LIKELY" - Many matching elements.
 	Likelihood string `json:"likelihood,omitempty"`
 
-	// Location: Location of the info found.
+	// Location: Where the content was found.
 	Location *GooglePrivacyDlpV2beta2Location `json:"location,omitempty"`
 
-	// Quote: The specific string that may be potentially sensitive info.
+	// Quote: The content that was found. Even if the content is not
+	// textual, it
+	// may be converted to a textual representation here.
+	// Provided if requested by the `InspectConfig` and the finding is
+	// less than or equal to 4096 bytes long. If the finding exceeds 4096
+	// bytes
+	// in length, the quote may be omitted.
 	Quote string `json:"quote,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "CreateTime") to
@@ -5385,27 +5392,44 @@ func (s *GooglePrivacyDlpV2beta2ListInspectTemplatesResponse) MarshalJSON() ([]b
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-// GooglePrivacyDlpV2beta2Location: Specifies the location of a finding
-// within its source item.
+// GooglePrivacyDlpV2beta2Location: Specifies the location of the
+// finding.
 type GooglePrivacyDlpV2beta2Location struct {
-	// ByteRange: Zero-based byte offsets within a content item.
+	// ByteRange: Zero-based byte offsets delimiting the finding.
+	// These are relative to the finding's containing element.
+	// Note that when the content is not textual, this references
+	// the UTF-8 encoded textual representation of the content.
+	// Omitted if content is an image.
 	ByteRange *GooglePrivacyDlpV2beta2Range `json:"byteRange,omitempty"`
 
-	// CodepointRange: Character offsets within a content item, included
-	// when content type
-	// is a text. Default charset assumed to be UTF-8.
+	// CodepointRange: Unicode character offsets delimiting the
+	// finding.
+	// These are relative to the finding's containing element.
+	// Provided when the content is text.
 	CodepointRange *GooglePrivacyDlpV2beta2Range `json:"codepointRange,omitempty"`
 
-	// FieldId: Field id of the field containing the finding.
+	// FieldId: The pointer to the property or cell that contained the
+	// finding.
+	// Provided when the finding's containing element is a cell in a
+	// table
+	// or a property of storage object.
 	FieldId *GooglePrivacyDlpV2beta2FieldId `json:"fieldId,omitempty"`
 
-	// ImageBoxes: Location within an image's pixels.
+	// ImageBoxes: The area within the image that contained the
+	// finding.
+	// Provided when the content is an image.
 	ImageBoxes []*GooglePrivacyDlpV2beta2ImageLocation `json:"imageBoxes,omitempty"`
 
-	// RecordKey: Key of the finding.
+	// RecordKey: The pointer to the record in storage that contained the
+	// field the
+	// finding was found in.
+	// Provided when the finding's containing element is a property
+	// of a storage object.
 	RecordKey *GooglePrivacyDlpV2beta2RecordKey `json:"recordKey,omitempty"`
 
-	// TableLocation: Location within a `ContentItem.Table`.
+	// TableLocation: The pointer to the row of the table that contained the
+	// finding.
+	// Provided when the finding's containing element is a cell of a table.
 	TableLocation *GooglePrivacyDlpV2beta2TableLocation `json:"tableLocation,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "ByteRange") to
@@ -5503,7 +5527,13 @@ func (s *GooglePrivacyDlpV2beta2NumericalStatsResult) MarshalJSON() ([]byte, err
 // GooglePrivacyDlpV2beta2OutputStorageConfig: Cloud repository for
 // storing output.
 type GooglePrivacyDlpV2beta2OutputStorageConfig struct {
-	// Table: Store findings in a new table in an existing dataset.
+	// Table: Store findings in a new table in an existing dataset. If
+	// table_id is not
+	// set a new one will be generated for you with the following
+	// format:
+	// dlp_googleapis_yyyy_mm_dd_[dlp_job_id]. Pacific timezone will be used
+	// for
+	// generating the date details.
 	Table *GooglePrivacyDlpV2beta2BigQueryTable `json:"table,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Table") to
@@ -6372,7 +6402,7 @@ func (s *GooglePrivacyDlpV2beta2Table) MarshalJSON() ([]byte, error) {
 }
 
 // GooglePrivacyDlpV2beta2TableLocation: Location of a finding within a
-// `ContentItem.Table`.
+// table.
 type GooglePrivacyDlpV2beta2TableLocation struct {
 	// RowIndex: The zero-based index of the row where the finding is
 	// located.
@@ -6424,6 +6454,9 @@ type GooglePrivacyDlpV2beta2TaggedField struct {
 	// dataset as a statistical model of population, if available.
 	// We
 	// currently support US ZIP codes, region codes, ages and genders.
+	// To programmatically obtain the list of supported InfoTypes,
+	// use
+	// ListInfoTypes with the supported_by=RISK_ANALYSIS filter.
 	InfoType *GooglePrivacyDlpV2beta2InfoType `json:"infoType,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "CustomTag") to
@@ -7471,7 +7504,7 @@ func (c *OrganizationsDeidentifyTemplatesDeleteCall) Do(opts ...googleapi.CallOp
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "Resource name of the organization and deidentify template to be deleted,\nfor example `organizations/433245324/deidentifyTemplates/432452342`.",
+	//       "description": "Resource name of the organization and deidentify template to be deleted,\nfor example `organizations/433245324/deidentifyTemplates/432452342` or\nprojects/project-id/deidentifyTemplates/432452342.",
 	//       "location": "path",
 	//       "pattern": "^organizations/[^/]+/deidentifyTemplates/[^/]+$",
 	//       "required": true,
@@ -7612,7 +7645,7 @@ func (c *OrganizationsDeidentifyTemplatesGetCall) Do(opts ...googleapi.CallOptio
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "Resource name of the organization and deidentify template to be read, for\nexample `organizations/433245324/deidentifyTemplates/432452342`.",
+	//       "description": "Resource name of the organization and deidentify template to be read, for\nexample `organizations/433245324/deidentifyTemplates/432452342` or\nprojects/project-id/deidentifyTemplates/432452342.",
 	//       "location": "path",
 	//       "pattern": "^organizations/[^/]+/deidentifyTemplates/[^/]+$",
 	//       "required": true,
@@ -7936,7 +7969,7 @@ func (c *OrganizationsDeidentifyTemplatesPatchCall) Do(opts ...googleapi.CallOpt
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "Resource name of organization and deidentify template to be updated, for\nexample `organizations/433245324/deidentifyTemplates/432452342`.",
+	//       "description": "Resource name of organization and deidentify template to be updated, for\nexample `organizations/433245324/deidentifyTemplates/432452342` or\nprojects/project-id/deidentifyTemplates/432452342.",
 	//       "location": "path",
 	//       "pattern": "^organizations/[^/]+/deidentifyTemplates/[^/]+$",
 	//       "required": true,
@@ -8202,7 +8235,7 @@ func (c *OrganizationsInspectTemplatesDeleteCall) Do(opts ...googleapi.CallOptio
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "Resource name of the organization and inspectTemplate to be deleted, for\nexample `organizations/433245324/inspectTemplates/432452342`.",
+	//       "description": "Resource name of the organization and inspectTemplate to be deleted, for\nexample `organizations/433245324/inspectTemplates/432452342` or\nprojects/project-id/inspectTemplates/432452342.",
 	//       "location": "path",
 	//       "pattern": "^organizations/[^/]+/inspectTemplates/[^/]+$",
 	//       "required": true,
@@ -8342,7 +8375,7 @@ func (c *OrganizationsInspectTemplatesGetCall) Do(opts ...googleapi.CallOption) 
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "Resource name of the organization and inspectTemplate to be read, for\nexample `organizations/433245324/inspectTemplates/432452342`.",
+	//       "description": "Resource name of the organization and inspectTemplate to be read, for\nexample `organizations/433245324/inspectTemplates/432452342` or\nprojects/project-id/inspectTemplates/432452342.",
 	//       "location": "path",
 	//       "pattern": "^organizations/[^/]+/inspectTemplates/[^/]+$",
 	//       "required": true,
@@ -8664,7 +8697,7 @@ func (c *OrganizationsInspectTemplatesPatchCall) Do(opts ...googleapi.CallOption
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "Resource name of organization and inspectTemplate to be updated, for\nexample `organizations/433245324/inspectTemplates/432452342`.",
+	//       "description": "Resource name of organization and inspectTemplate to be updated, for\nexample `organizations/433245324/inspectTemplates/432452342` or\nprojects/project-id/inspectTemplates/432452342.",
 	//       "location": "path",
 	//       "pattern": "^organizations/[^/]+/inspectTemplates/[^/]+$",
 	//       "required": true,
@@ -9118,7 +9151,7 @@ type ProjectsDataSourceAnalyzeCall struct {
 // Analyze: Schedules a job to compute risk analysis metrics over
 // content in a Google
 // Cloud Platform repository. [How-to
-// guide}(/dlp/docs/compute-risk-analysis)
+// guide](/dlp/docs/compute-risk-analysis)
 func (r *ProjectsDataSourceService) Analyze(parent string, googleprivacydlpv2beta2analyzedatasourceriskrequest *GooglePrivacyDlpV2beta2AnalyzeDataSourceRiskRequest) *ProjectsDataSourceAnalyzeCall {
 	c := &ProjectsDataSourceAnalyzeCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.parent = parent
@@ -9212,7 +9245,7 @@ func (c *ProjectsDataSourceAnalyzeCall) Do(opts ...googleapi.CallOption) (*Googl
 	}
 	return ret, nil
 	// {
-	//   "description": "Schedules a job to compute risk analysis metrics over content in a Google\nCloud Platform repository. [How-to guide}(/dlp/docs/compute-risk-analysis)",
+	//   "description": "Schedules a job to compute risk analysis metrics over content in a Google\nCloud Platform repository. [How-to guide](/dlp/docs/compute-risk-analysis)",
 	//   "flatPath": "v2beta2/projects/{projectsId}/dataSource:analyze",
 	//   "httpMethod": "POST",
 	//   "id": "dlp.projects.dataSource.analyze",
@@ -9625,7 +9658,7 @@ func (c *ProjectsDeidentifyTemplatesDeleteCall) Do(opts ...googleapi.CallOption)
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "Resource name of the organization and deidentify template to be deleted,\nfor example `organizations/433245324/deidentifyTemplates/432452342`.",
+	//       "description": "Resource name of the organization and deidentify template to be deleted,\nfor example `organizations/433245324/deidentifyTemplates/432452342` or\nprojects/project-id/deidentifyTemplates/432452342.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/deidentifyTemplates/[^/]+$",
 	//       "required": true,
@@ -9766,7 +9799,7 @@ func (c *ProjectsDeidentifyTemplatesGetCall) Do(opts ...googleapi.CallOption) (*
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "Resource name of the organization and deidentify template to be read, for\nexample `organizations/433245324/deidentifyTemplates/432452342`.",
+	//       "description": "Resource name of the organization and deidentify template to be read, for\nexample `organizations/433245324/deidentifyTemplates/432452342` or\nprojects/project-id/deidentifyTemplates/432452342.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/deidentifyTemplates/[^/]+$",
 	//       "required": true,
@@ -10090,7 +10123,7 @@ func (c *ProjectsDeidentifyTemplatesPatchCall) Do(opts ...googleapi.CallOption) 
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "Resource name of organization and deidentify template to be updated, for\nexample `organizations/433245324/deidentifyTemplates/432452342`.",
+	//       "description": "Resource name of organization and deidentify template to be updated, for\nexample `organizations/433245324/deidentifyTemplates/432452342` or\nprojects/project-id/deidentifyTemplates/432452342.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/deidentifyTemplates/[^/]+$",
 	//       "required": true,
@@ -11147,7 +11180,7 @@ func (c *ProjectsInspectTemplatesDeleteCall) Do(opts ...googleapi.CallOption) (*
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "Resource name of the organization and inspectTemplate to be deleted, for\nexample `organizations/433245324/inspectTemplates/432452342`.",
+	//       "description": "Resource name of the organization and inspectTemplate to be deleted, for\nexample `organizations/433245324/inspectTemplates/432452342` or\nprojects/project-id/inspectTemplates/432452342.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/inspectTemplates/[^/]+$",
 	//       "required": true,
@@ -11287,7 +11320,7 @@ func (c *ProjectsInspectTemplatesGetCall) Do(opts ...googleapi.CallOption) (*Goo
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "Resource name of the organization and inspectTemplate to be read, for\nexample `organizations/433245324/inspectTemplates/432452342`.",
+	//       "description": "Resource name of the organization and inspectTemplate to be read, for\nexample `organizations/433245324/inspectTemplates/432452342` or\nprojects/project-id/inspectTemplates/432452342.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/inspectTemplates/[^/]+$",
 	//       "required": true,
@@ -11609,7 +11642,7 @@ func (c *ProjectsInspectTemplatesPatchCall) Do(opts ...googleapi.CallOption) (*G
 	//   ],
 	//   "parameters": {
 	//     "name": {
-	//       "description": "Resource name of organization and inspectTemplate to be updated, for\nexample `organizations/433245324/inspectTemplates/432452342`.",
+	//       "description": "Resource name of organization and inspectTemplate to be updated, for\nexample `organizations/433245324/inspectTemplates/432452342` or\nprojects/project-id/inspectTemplates/432452342.",
 	//       "location": "path",
 	//       "pattern": "^projects/[^/]+/inspectTemplates/[^/]+$",
 	//       "required": true,

@@ -1824,15 +1824,16 @@ type SubscriptionPurchase struct {
 
 	// LinkedPurchaseToken: The purchase token of the originating purchase
 	// if this subscription is one of the following:
-	// - Re-signup of a cancelled but non-lapsed subscription
+	// - Re-signup of a canceled but non-lapsed subscription
 	// - Upgrade/downgrade from a previous subscription  For example,
 	// suppose a user originally signs up and you receive purchase token X,
-	// then the user cancels and goes through the resignup flow and you
-	// receive purchase token Y. If you call this API with purchase token Y,
-	// this field will be set to X. If you call this API with purchase token
-	// X, this field will not be set. If user upgrade his subscription after
-	// the first resignup. You receive purchase token Z. If you call this
-	// API with purchase token Z, this field will be set to Y.
+	// then the user cancels and goes through the resignup flow (before
+	// their subscription lapses) and you receive purchase token Y, and
+	// finally the user upgrades their subscription and you receive purchase
+	// token Z. If you call this API with purchase token Z, this field will
+	// be set to Y. If you call this API with purchase token Y, this field
+	// will be set to X. If you call this API with purchase token X, this
+	// field will not be set.
 	LinkedPurchaseToken string `json:"linkedPurchaseToken,omitempty"`
 
 	// OrderId: The order id of the latest recurring order associated with
@@ -2049,6 +2050,8 @@ func (s *TokenPagination) MarshalJSON() ([]byte, error) {
 }
 
 type Track struct {
+	// Track: Identifier for this track. One of "alpha", "beta",
+	// "production" or "rollout".
 	Track string `json:"track,omitempty"`
 
 	UserFraction float64 `json:"userFraction,omitempty"`
@@ -4237,11 +4240,12 @@ func (c *EditsApksUploadCall) doRequest(alt string) (*http.Response, error) {
 		body = new(bytes.Buffer)
 		reqHeaders.Set("Content-Type", "application/json")
 	}
-	body, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
+	body, getBody, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
 	defer cleanup()
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
 	req.Header = reqHeaders
+	gensupport.SetGetBody(req, getBody)
 	googleapi.Expand(req.URL, map[string]string{
 		"packageName": c.packageNameid,
 		"editId":      c.editId,
@@ -4459,11 +4463,12 @@ func (c *EditsDeobfuscationfilesUploadCall) doRequest(alt string) (*http.Respons
 		body = new(bytes.Buffer)
 		reqHeaders.Set("Content-Type", "application/json")
 	}
-	body, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
+	body, getBody, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
 	defer cleanup()
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
 	req.Header = reqHeaders
+	gensupport.SetGetBody(req, getBody)
 	googleapi.Expand(req.URL, map[string]string{
 		"packageName":           c.packageNameid,
 		"editId":                c.editId,
@@ -5659,11 +5664,12 @@ func (c *EditsExpansionfilesUploadCall) doRequest(alt string) (*http.Response, e
 		body = new(bytes.Buffer)
 		reqHeaders.Set("Content-Type", "application/json")
 	}
-	body, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
+	body, getBody, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
 	defer cleanup()
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
 	req.Header = reqHeaders
+	gensupport.SetGetBody(req, getBody)
 	googleapi.Expand(req.URL, map[string]string{
 		"packageName":       c.packageNameid,
 		"editId":            c.editId,
@@ -6424,11 +6430,12 @@ func (c *EditsImagesUploadCall) doRequest(alt string) (*http.Response, error) {
 		body = new(bytes.Buffer)
 		reqHeaders.Set("Content-Type", "application/json")
 	}
-	body, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
+	body, getBody, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
 	defer cleanup()
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
 	req.Header = reqHeaders
+	gensupport.SetGetBody(req, getBody)
 	googleapi.Expand(req.URL, map[string]string{
 		"packageName": c.packageNameid,
 		"editId":      c.editId,
@@ -7548,19 +7555,9 @@ func (c *EditsTestersGetCall) Do(opts ...googleapi.CallOption) (*Testers, error)
 	//       "type": "string"
 	//     },
 	//     "track": {
-	//       "enum": [
-	//         "alpha",
-	//         "beta",
-	//         "production",
-	//         "rollout"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         ""
-	//       ],
+	//       "description": "The track to read or modify. Acceptable values are: \"alpha\", \"beta\", \"production\" or \"rollout\".",
 	//       "location": "path",
+	//       "pattern": "(alpha|beta|production|rollout)",
 	//       "required": true,
 	//       "type": "string"
 	//     }
@@ -7708,19 +7705,9 @@ func (c *EditsTestersPatchCall) Do(opts ...googleapi.CallOption) (*Testers, erro
 	//       "type": "string"
 	//     },
 	//     "track": {
-	//       "enum": [
-	//         "alpha",
-	//         "beta",
-	//         "production",
-	//         "rollout"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         ""
-	//       ],
+	//       "description": "The track to read or modify. Acceptable values are: \"alpha\", \"beta\", \"production\" or \"rollout\".",
 	//       "location": "path",
+	//       "pattern": "(alpha|beta|production|rollout)",
 	//       "required": true,
 	//       "type": "string"
 	//     }
@@ -7871,19 +7858,9 @@ func (c *EditsTestersUpdateCall) Do(opts ...googleapi.CallOption) (*Testers, err
 	//       "type": "string"
 	//     },
 	//     "track": {
-	//       "enum": [
-	//         "alpha",
-	//         "beta",
-	//         "production",
-	//         "rollout"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         ""
-	//       ],
+	//       "description": "The track to read or modify. Acceptable values are: \"alpha\", \"beta\", \"production\" or \"rollout\".",
 	//       "location": "path",
+	//       "pattern": "(alpha|beta|production|rollout)",
 	//       "required": true,
 	//       "type": "string"
 	//     }
@@ -8043,20 +8020,9 @@ func (c *EditsTracksGetCall) Do(opts ...googleapi.CallOption) (*Track, error) {
 	//       "type": "string"
 	//     },
 	//     "track": {
-	//       "description": "The track type to read or modify.",
-	//       "enum": [
-	//         "alpha",
-	//         "beta",
-	//         "production",
-	//         "rollout"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         ""
-	//       ],
+	//       "description": "The track to read or modify. Acceptable values are: \"alpha\", \"beta\", \"production\" or \"rollout\".",
 	//       "location": "path",
+	//       "pattern": "(alpha|beta|production|rollout)",
 	//       "required": true,
 	//       "type": "string"
 	//     }
@@ -8355,20 +8321,9 @@ func (c *EditsTracksPatchCall) Do(opts ...googleapi.CallOption) (*Track, error) 
 	//       "type": "string"
 	//     },
 	//     "track": {
-	//       "description": "The track type to read or modify.",
-	//       "enum": [
-	//         "alpha",
-	//         "beta",
-	//         "production",
-	//         "rollout"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         ""
-	//       ],
+	//       "description": "The track to read or modify. Acceptable values are: \"alpha\", \"beta\", \"production\" or \"rollout\".",
 	//       "location": "path",
+	//       "pattern": "(alpha|beta|production|rollout)",
 	//       "required": true,
 	//       "type": "string"
 	//     }
@@ -8522,20 +8477,9 @@ func (c *EditsTracksUpdateCall) Do(opts ...googleapi.CallOption) (*Track, error)
 	//       "type": "string"
 	//     },
 	//     "track": {
-	//       "description": "The track type to read or modify.",
-	//       "enum": [
-	//         "alpha",
-	//         "beta",
-	//         "production",
-	//         "rollout"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         ""
-	//       ],
+	//       "description": "The track to read or modify. Acceptable values are: \"alpha\", \"beta\", \"production\" or \"rollout\".",
 	//       "location": "path",
+	//       "pattern": "(alpha|beta|production|rollout)",
 	//       "required": true,
 	//       "type": "string"
 	//     }

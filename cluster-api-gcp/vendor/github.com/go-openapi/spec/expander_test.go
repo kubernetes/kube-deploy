@@ -626,6 +626,59 @@ func TestDefaultResolutionCache(t *testing.T) {
 	assert.Equal(t, "here", sch)
 }
 
+func TestRelativeBaseURI(t *testing.T) {
+	server := httptest.NewServer(http.FileServer(http.Dir("fixtures/remote")))
+	defer server.Close()
+
+	spec := new(Swagger)
+	// resolver, err := defaultSchemaLoader(spec, nil, nil)
+	// assert.NoError(t, err)
+
+	err := ExpandSpec(spec, nil)
+	assert.NoError(t, err)
+
+	specDoc, err := jsonDoc("fixtures/remote/all-the-things.json")
+	assert.NoError(t, err)
+
+	opts := &ExpandOptions{
+		RelativeBase: server.URL + "/all-the-things.json",
+	}
+
+	spec = new(Swagger)
+	err = json.Unmarshal(specDoc, spec)
+	assert.NoError(t, err)
+
+	pet := spec.Definitions["pet"]
+	errorModel := spec.Definitions["errorModel"]
+	petResponse := spec.Responses["petResponse"]
+	petResponse.Schema = &pet
+	stringResponse := spec.Responses["stringResponse"]
+	tagParam := spec.Parameters["tag"]
+	idParam := spec.Parameters["idParam"]
+
+	err = ExpandSpec(spec, opts)
+	assert.NoError(t, err)
+
+	assert.Equal(t, tagParam, spec.Parameters["query"])
+	assert.Equal(t, petResponse, spec.Responses["petResponse"])
+	assert.Equal(t, petResponse, spec.Responses["anotherPet"])
+	assert.Equal(t, pet, *spec.Responses["petResponse"].Schema)
+	assert.Equal(t, stringResponse, *spec.Paths.Paths["/"].Get.Responses.Default)
+	assert.Equal(t, petResponse, spec.Paths.Paths["/"].Get.Responses.StatusCodeResponses[200])
+	assert.Equal(t, pet, *spec.Paths.Paths["/pets"].Get.Responses.StatusCodeResponses[200].Schema.Items.Schema)
+	assert.Equal(t, errorModel, *spec.Paths.Paths["/pets"].Get.Responses.Default.Schema)
+	assert.Equal(t, pet, spec.Definitions["petInput"].AllOf[0])
+	assert.Equal(t, spec.Definitions["petInput"], *spec.Paths.Paths["/pets"].Post.Parameters[0].Schema)
+	assert.Equal(t, petResponse, spec.Paths.Paths["/pets"].Post.Responses.StatusCodeResponses[200])
+	assert.Equal(t, errorModel, *spec.Paths.Paths["/pets"].Post.Responses.Default.Schema)
+	pi := spec.Paths.Paths["/pets/{id}"]
+	assert.Equal(t, idParam, pi.Get.Parameters[0])
+	assert.Equal(t, petResponse, pi.Get.Responses.StatusCodeResponses[200])
+	assert.Equal(t, errorModel, *pi.Get.Responses.Default.Schema)
+	assert.Equal(t, idParam, pi.Delete.Parameters[0])
+	assert.Equal(t, errorModel, *pi.Delete.Responses.Default.Schema)
+}
+
 func resolutionContextServer() *httptest.Server {
 	var servedAt string
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {

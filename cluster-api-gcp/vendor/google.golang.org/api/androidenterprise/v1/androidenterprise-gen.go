@@ -1825,6 +1825,9 @@ type NewDeviceEvent struct {
 	// present.
 	DeviceId string `json:"deviceId,omitempty"`
 
+	// DpcPackageName: Policy app on the device.
+	DpcPackageName string `json:"dpcPackageName,omitempty"`
+
 	// ManagementType: Identifies the extent to which the device is
 	// controlled by an Android EMM in various deployment
 	// configurations.
@@ -2160,7 +2163,7 @@ type Product struct {
 	// ContentRating: The content rating for this app.
 	ContentRating string `json:"contentRating,omitempty"`
 
-	// Description: A localized promotional description, if available.
+	// Description: The localized promotional description, if available.
 	Description string `json:"description,omitempty"`
 
 	// DetailsUrl: A link to the (consumer) Google Play details page for the
@@ -2184,16 +2187,15 @@ type Product struct {
 	// string "androidenterprise#product".
 	Kind string `json:"kind,omitempty"`
 
-	// LastUpdatedTimestampMillis: The time (in milliseconds since epoch)
-	// when application was last published. (Timestamp is approximate within
-	// 7 days of actual publish time.)
+	// LastUpdatedTimestampMillis: The approximate time (within 7 days) the
+	// app was last published, expressed in milliseconds since epoch.
 	LastUpdatedTimestampMillis int64 `json:"lastUpdatedTimestampMillis,omitempty,string"`
 
 	// MinAndroidSdkVersion: The minimum Android SDK necessary to run the
 	// app.
 	MinAndroidSdkVersion int64 `json:"minAndroidSdkVersion,omitempty"`
 
-	// Permissions: The permissions required for this app.
+	// Permissions: A list of permissions required by the app.
 	Permissions []*ProductPermission `json:"permissions,omitempty"`
 
 	// ProductId: A string of the form app:<package name>. For example,

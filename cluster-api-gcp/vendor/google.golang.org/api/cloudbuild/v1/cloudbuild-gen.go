@@ -259,14 +259,17 @@ type Build struct {
 	// Default time is ten minutes.
 	Timeout string `json:"timeout,omitempty"`
 
-	// Timing: Stores timing information for phases of the build.
-	// Valid keys are:
-	// - BUILD: time to execute all build steps
-	// - PUSH: time to push all specified images.
-	// - FETCHSOURCE: time to fetch source.
+	// Timing: Stores timing information for phases of the build. Valid keys
+	// are:
+	//
+	// * BUILD: time to execute all build steps
+	// * PUSH: time to push all specified images.
+	// * FETCHSOURCE: time to fetch source.
+	//
 	// If the build does not specify source, or does not specify
 	// images,
 	// these keys will not be included.
+	// @OutputOnly
 	Timing map[string]TimeSpan `json:"timing,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
@@ -355,7 +358,7 @@ type BuildOptions struct {
 	// written when the build is completed.
 	LogStreamingOption string `json:"logStreamingOption,omitempty"`
 
-	// MachineType: GCE VM size to run the build on.
+	// MachineType: Compute Engine machine type on which to run the build.
 	//
 	// Possible values:
 	//   "UNSPECIFIED" - Standard machine type.
@@ -426,9 +429,22 @@ type BuildStep struct {
 	// and the remainder will be used as arguments.
 	Args []string `json:"args,omitempty"`
 
-	// Dir: Working directory (relative to project source root) to use when
-	// running
-	// this operation's container.
+	// Dir: Working directory to use when running this step's container.
+	//
+	// If this value is a relative path, it is relative to the build's
+	// working
+	// directory. If this value is absolute, it may be outside the build's
+	// working
+	// directory, in which case the contents of the path may not be
+	// persisted
+	// across build step executions, unless a volume for that path is
+	// specified.
+	//
+	// If the build specifies a RepoSource with dir and a step with a dir
+	// which
+	// specifies an absolute path, the RepoSource dir is ignored for the
+	// step's
+	// execution.
 	Dir string `json:"dir,omitempty"`
 
 	// Entrypoint: Optional entrypoint to be used instead of the build step
@@ -483,7 +499,9 @@ type BuildStep struct {
 	// crypto key. These values must be specified in the build's secrets.
 	SecretEnv []string `json:"secretEnv,omitempty"`
 
-	// Timing: Stores timing information for executing this build step.
+	// Timing: Stores timing information for executing this build
+	// step.
+	// @OutputOnly
 	Timing *TimeSpan `json:"timing,omitempty"`
 
 	// Volumes: List of volumes to mount into the build step.
@@ -613,6 +631,7 @@ type BuiltImage struct {
 
 	// PushTiming: Stores timing information for pushing the specified
 	// image.
+	// @OutputOnly
 	PushTiming *TimeSpan `json:"pushTiming,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Digest") to
@@ -924,6 +943,10 @@ type RepoSource struct {
 
 	// Dir: Directory, relative to the source root, in which to run the
 	// build.
+	//
+	// This must be a relative path. If a step's dir is specified and is
+	// an
+	// absolute path, this value is ignored for that step's execution.
 	Dir string `json:"dir,omitempty"`
 
 	// ProjectId: ID of the project that owns the repo. If omitted, the

@@ -2006,17 +2006,6 @@ type HttpRule struct {
 	// Put: Used for updating a resource.
 	Put string `json:"put,omitempty"`
 
-	// ResponseBody: The name of the response field whose value is mapped to
-	// the HTTP body of
-	// response. Other response fields are ignored. This field is optional.
-	// When
-	// not set, the response message will be used as HTTP body of
-	// response.
-	// NOTE: the referred field must be not a repeated field and must be
-	// present
-	// at the top-level of response message type.
-	ResponseBody string `json:"responseBody,omitempty"`
-
 	// RestCollection: DO NOT USE. This is an experimental field.
 	//
 	// Optional. The REST collection name is by default derived from the
@@ -2659,8 +2648,6 @@ type MetricDescriptor struct {
 	//
 	// **Grammar**
 	//
-	// The grammar includes the dimensionless unit `1`, such as `1/s`.
-	//
 	// The grammar also includes these connectors:
 	//
 	// * `/`    division (as an infix operator, e.g. `1/s`).
@@ -2670,7 +2657,7 @@ type MetricDescriptor struct {
 	//
 	//     Expression = Component { "." Component } { "/" Component } ;
 	//
-	//     Component = [ PREFIX ] UNIT [ Annotation ]
+	//     Component = ( [ PREFIX ] UNIT | "%" ) [ Annotation ]
 	//               | Annotation
 	//               | "1"
 	//               ;
@@ -2684,6 +2671,10 @@ type MetricDescriptor struct {
 	//    `{requests}/s == 1/s`, `By{transmitted}/s == By/s`.
 	// * `NAME` is a sequence of non-blank printable ASCII characters not
 	//    containing '{' or '}'.
+	// * `1` represents dimensionless value 1, such as in `1/s`.
+	// * `%` represents dimensionless value 1/100, and annotates values
+	// giving
+	//    a percentage.
 	Unit string `json:"unit,omitempty"`
 
 	// ValueType: Whether the measurement is an integer, a floating-point
@@ -4246,6 +4237,7 @@ type TenancyUnit struct {
 	Service string `json:"service,omitempty"`
 
 	// TenantResources: Resources constituting the tenancy unit.
+	// There can be at most 512 tenant resources in a tenancy units.
 	TenantResources []*TenantResource `json:"tenantResources,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
@@ -5598,6 +5590,7 @@ type ServicesTenancyUnitsAddProjectCall struct {
 }
 
 // AddProject: Add a new tenant project to the tenancy unit.
+// There can be at most 512 tenant projects in a tenancy units.
 // If there are previously failed AddTenantProject calls, you might need
 // to
 // call RemoveTenantProject first to clean them before you can make
@@ -5697,7 +5690,7 @@ func (c *ServicesTenancyUnitsAddProjectCall) Do(opts ...googleapi.CallOption) (*
 	}
 	return ret, nil
 	// {
-	//   "description": "Add a new tenant project to the tenancy unit.\nIf there are previously failed AddTenantProject calls, you might need to\ncall RemoveTenantProject first to clean them before you can make another\nAddTenantProject with the same tag.\nOperation\u003cresponse: Empty\u003e.",
+	//   "description": "Add a new tenant project to the tenancy unit.\nThere can be at most 512 tenant projects in a tenancy units.\nIf there are previously failed AddTenantProject calls, you might need to\ncall RemoveTenantProject first to clean them before you can make another\nAddTenantProject with the same tag.\nOperation\u003cresponse: Empty\u003e.",
 	//   "flatPath": "v1/services/{servicesId}/{servicesId1}/{servicesId2}/tenancyUnits/{tenancyUnitsId}:addProject",
 	//   "httpMethod": "POST",
 	//   "id": "serviceconsumermanagement.services.tenancyUnits.addProject",

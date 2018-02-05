@@ -3347,6 +3347,10 @@ type VideoContent struct {
 	// VideoUrl: The URL to fetch a video ad.
 	VideoUrl string `json:"videoUrl,omitempty"`
 
+	// VideoVastXml: The contents of a VAST document for a video ad.
+	// This document should conform to the VAST 2.0 or 3.0 standard.
+	VideoVastXml string `json:"videoVastXml,omitempty"`
+
 	// ForceSendFields is a list of field names (e.g. "VideoUrl") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
@@ -5095,6 +5099,13 @@ func (r *AccountsCreativesService) Create(accountId string, creative *Creative) 
 	return c
 }
 
+// AccountId1 sets the optional parameter "accountId1": The account the
+// creative belongs to.
+func (c *AccountsCreativesCreateCall) AccountId1(accountId1 string) *AccountsCreativesCreateCall {
+	c.urlParams_.Set("accountId1", accountId1)
+	return c
+}
+
 // DuplicateIdMode sets the optional parameter "duplicateIdMode":
 // Indicates if multiple creatives can share an ID or not. Default
 // is
@@ -5206,6 +5217,11 @@ func (c *AccountsCreativesCreateCall) Do(opts ...googleapi.CallOption) (*Creativ
 	//       "description": "The account that this creative belongs to.\nCan be used to filter the response of the\ncreatives.list\nmethod.",
 	//       "location": "path",
 	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "accountId1": {
+	//       "description": "The account the creative belongs to.",
+	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "duplicateIdMode": {
@@ -5772,6 +5788,13 @@ func (r *AccountsCreativesService) Update(accountId string, creativeId string, c
 	return c
 }
 
+// AccountId1 sets the optional parameter "accountId1": The account the
+// creative belongs to.
+func (c *AccountsCreativesUpdateCall) AccountId1(accountId1 string) *AccountsCreativesUpdateCall {
+	c.urlParams_.Set("accountId1", accountId1)
+	return c
+}
+
 // Fields allows partial responses to be retrieved. See
 // https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
@@ -5872,6 +5895,11 @@ func (c *AccountsCreativesUpdateCall) Do(opts ...googleapi.CallOption) (*Creativ
 	//       "description": "The account that this creative belongs to.\nCan be used to filter the response of the\ncreatives.list\nmethod.",
 	//       "location": "path",
 	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "accountId1": {
+	//       "description": "The account the creative belongs to.",
+	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "creativeId": {

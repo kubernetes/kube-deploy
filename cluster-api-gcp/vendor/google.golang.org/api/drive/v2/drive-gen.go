@@ -271,6 +271,9 @@ type About struct {
 	// file type. The most specific type takes precedence.
 	AdditionalRoleInfo []*AboutAdditionalRoleInfo `json:"additionalRoleInfo,omitempty"`
 
+	// CanCreateTeamDrives: Whether the user can create Team Drives.
+	CanCreateTeamDrives bool `json:"canCreateTeamDrives,omitempty"`
+
 	// DomainSharingPolicy: The domain sharing policy for the current user.
 	// Possible values are:
 	// - allowed
@@ -1583,11 +1586,12 @@ type File struct {
 	// files.
 	Owners []*User `json:"owners,omitempty"`
 
-	// Parents: Collection of parent folders which contain this
-	// file.
-	// Setting this field will put the file in all of the provided folders.
-	// On insert, if no folders are provided, the file will be placed in the
-	// default root folder.
+	// Parents: Collection of parent folders which contain this file.
+	// If not specified as part of an insert request, the file will be
+	// placed directly in the user's My Drive folder. If not specified as
+	// part of a copy request, the file will inherit any discoverable
+	// parents of the source file. Update requests can also use the
+	// addParents and removeParents parameters to modify the parents list.
 	Parents []*ParentReference `json:"parents,omitempty"`
 
 	// PermissionIds: List of permission IDs for users with access to this
@@ -2336,7 +2340,8 @@ type Permission struct {
 	// - They can only be set on user and group permissions
 	// - The date must be in the future
 	// - The date cannot be more than a year in the future
-	// - The date can only be set on drive.permissions.update requests
+	// - The date can only be set on drive.permissions.update or
+	// drive.permissions.patch requests
 	ExpirationDate string `json:"expirationDate,omitempty"`
 
 	// Id: The ID of the user this permission refers to, and identical to
@@ -7330,11 +7335,12 @@ func (c *FilesInsertCall) doRequest(alt string) (*http.Response, error) {
 		body = new(bytes.Buffer)
 		reqHeaders.Set("Content-Type", "application/json")
 	}
-	body, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
+	body, getBody, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
 	defer cleanup()
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
 	req.Header = reqHeaders
+	gensupport.SetGetBody(req, getBody)
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
 
@@ -8821,11 +8827,12 @@ func (c *FilesUpdateCall) doRequest(alt string) (*http.Response, error) {
 		body = new(bytes.Buffer)
 		reqHeaders.Set("Content-Type", "application/json")
 	}
-	body, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
+	body, getBody, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
 	defer cleanup()
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("PUT", urls, body)
 	req.Header = reqHeaders
+	gensupport.SetGetBody(req, getBody)
 	googleapi.Expand(req.URL, map[string]string{
 		"fileId": c.fileId,
 	})
@@ -12232,11 +12239,12 @@ func (c *RealtimeUpdateCall) doRequest(alt string) (*http.Response, error) {
 		body = new(bytes.Buffer)
 		reqHeaders.Set("Content-Type", "application/json")
 	}
-	body, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
+	body, getBody, cleanup := c.mediaInfo_.UploadRequest(reqHeaders, body)
 	defer cleanup()
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("PUT", urls, body)
 	req.Header = reqHeaders
+	gensupport.SetGetBody(req, getBody)
 	googleapi.Expand(req.URL, map[string]string{
 		"fileId": c.fileId,
 	})

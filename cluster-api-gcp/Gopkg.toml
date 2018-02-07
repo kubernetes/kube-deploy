@@ -63,3 +63,7 @@
 [[constraint]]
   branch = "master"
   name = "k8s.io/kube-deploy"
+
+[[constraint]]
+  name = "github.com/cenkalti/backoff"
+  version = "1.1.0"

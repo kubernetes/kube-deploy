@@ -23,6 +23,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/golang/glog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -234,18 +235,23 @@ func (d *deployer) getMasterIP(master *clusterv1.Machine) (string, error) {
 }
 
 func (d *deployer) copyKubeConfig(master *clusterv1.Machine) error {
-	for i := 0; i <= RetryAttempts; i++ {
-		var config string
-		var err error
-		if config, err = d.machineDeployer.GetKubeConfig(master); err != nil || config == "" {
-			glog.Infof("Waiting for Kubernetes to come up...")
-			time.Sleep(time.Duration(SleepSecondsPerAttempt) * time.Second)
-			continue
+	var config string
+	var err error
+	eb := util.NewExponentialBackoff(time.Duration(SleepSecondsPerAttempt) * time.Second * RetryAttempts, 10 * time.Second)
+	backoff.Retry(func() error {
+		glog.Infof("Waiting for Kubernetes to come up...")
+		config, err = d.machineDeployer.GetKubeConfig(master)
+		if err != nil || config == "" {
+			return fmt.Errorf("Could not while retriving kubeconfig %s", err)
 		}
-
+		glog.Infof("Kubernetes is up.. Writing kubeconfig to disk.")
 		return d.writeConfigToDisk(config)
+	}, eb)
+
+	if err != nil {
+		return fmt.Errorf("timedout writing kubeconfig: %s", err)
 	}
-	return fmt.Errorf("timedout writing kubeconfig")
+	return nil
 }
 
 func (d *deployer) initApiClient() error {
@@ -286,18 +292,21 @@ func (d *deployer) waitForApiserver(master string, timeout time.Duration) error 
 	}
 	client := &http.Client{Transport: tr}
 
-	startTime := time.Now()
-
 	var err error
 	var resp *http.Response
-	for time.Now().Sub(startTime) < timeout {
+	eb := util.NewExponentialBackoff(timeout, 10 * time.Second)
+	backoff.Retry(func() error {
 		resp, err = client.Get(endpoint)
 		if err == nil && resp.StatusCode == 200 {
 			return nil
 		}
-		time.Sleep(1 * time.Second)
+		return err
+	}, eb)
+	if err != nil {
+		glog.Infof("Error waiting for apiserver: %s", err)
+		return err
 	}
-	return err
+	return nil
 }
 
 // Make sure the default service account in kube-system namespace exists.
@@ -306,14 +315,19 @@ func (d *deployer) waitForServiceAccount(timeout time.Duration) error {
 	if err != nil {
 		return err
 	}
-	startTime := time.Now()
 
-	for time.Now().Sub(startTime) < timeout {
-		_, err := client.CoreV1().ServiceAccounts(ServiceAccountNs).Get(ServiceAccountName, metav1.GetOptions{})
+	eb := util.NewExponentialBackoff(timeout, 10 * time.Second)
+	backoff.Retry(func() error {
+		_, err = client.CoreV1().ServiceAccounts(ServiceAccountNs).Get(ServiceAccountName, metav1.GetOptions{})
 		if err == nil {
 			return nil
 		}
-		time.Sleep(SleepSecondsPerAttempt * time.Second)
+		return err
+	}, eb)
+
+	if err != nil {
+		glog.Infof("Error waiting for service account: %s", err)
+		return err
 	}
-	return err
+	return nil
 }

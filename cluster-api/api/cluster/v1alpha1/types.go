@@ -37,9 +37,31 @@ type Cluster struct {
 	Status ClusterStatus `json:"status,omitempty"`
 }
 
+type CloudProviderName string
+
+const (
+
+	// Amazon Web Service provider name
+	AWSCloudProvider CloudProviderName = "AWS"
+
+	// Google Cloud Engine provider name
+	GCECloudProvider CloudProviderName = "GCE"
+
+	// Digital Ocean provider name
+	DOCloudProvider CloudProviderName = "DIGITALOCEAN"
+
+	// Azure provider name
+	AzureCloudProvider CloudProviderName = "AZURE"
+)
+
 type ClusterSpec struct {
 	// Cluster network configuration
 	ClusterNetwork ClusterNetworkingConfig `json:"clusterNetwork"`
+
+	// ProviderName defines a name for each of the provider.
+	// This can be used to determine how to deserialize a ProviderConfig
+	// via a switch. The valid values here are of type CloudProviderName.
+	ProviderName CloudProviderName
 
 	// Provider-specific serialized configuration to use during
 	// cluster creation. It is recommended that providers maintain

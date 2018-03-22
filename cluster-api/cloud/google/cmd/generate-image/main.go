@@ -42,6 +42,7 @@ var generateCmd = &cobra.Command{
 	},
 }
 
+// TODO(kcoronado): take a script file as a parameter instead of generating the preloaded script from the template.
 func init() {
 	generateCmd.Flags().StringVar(&opts.version, "version", "1.7.3", "The version of kubernetes to install")
 	generateCmd.Flags().StringVar(&opts.role, "role", "master", "The role of the machine (master or node)")

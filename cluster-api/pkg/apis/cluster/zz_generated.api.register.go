@@ -53,6 +53,16 @@ var (
 		func() runtime.Object { return &Machine{} },
 		func() runtime.Object { return &MachineList{} },
 	)
+	InternalMachineClass = builders.NewInternalResource(
+		"machineclasses",
+		func() runtime.Object { return &MachineClass{} },
+		func() runtime.Object { return &MachineClassList{} },
+	)
+	InternalMachineClassStatus = builders.NewInternalResourceStatus(
+		"machineclasses",
+		func() runtime.Object { return &MachineClass{} },
+		func() runtime.Object { return &MachineClassList{} },
+	)
 	InternalMachineSet = builders.NewInternalResource(
 		"machinesets",
 		func() runtime.Object { return &MachineSet{} },
@@ -69,6 +79,8 @@ var (
 		InternalClusterStatus,
 		InternalMachine,
 		InternalMachineStatus,
+		InternalMachineClass,
+		InternalMachineClassStatus,
 		InternalMachineSet,
 		InternalMachineSetStatus,
 	)
@@ -90,6 +102,18 @@ func Kind(kind string) schema.GroupKind {
 // Resource takes an unqualified resource and returns a Group qualified GroupResource
 func Resource(resource string) schema.GroupResource {
 	return SchemeGroupVersion.WithResource(resource).GroupResource()
+}
+
+// +genclient
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type MachineClass struct {
+	metav1.TypeMeta
+	metav1.ObjectMeta
+	Capacity       corev1.ResourceList
+	Allocatable    corev1.ResourceList
+	ProviderConfig pkgruntime.RawExtension
 }
 
 // +genclient
@@ -186,6 +210,7 @@ type MachineSet struct {
 }
 
 type ProviderConfigSource struct {
+	MachineClass *MachineClassRef
 }
 
 type MachineSetStatus struct {
@@ -196,6 +221,11 @@ type MachineSetStatus struct {
 	ObservedGeneration   int64
 	ErrorReason          *clustercommon.MachineSetStatusError
 	ErrorMessage         *string
+}
+
+type MachineClassRef struct {
+	Name       string
+	Parameters map[string]string
 }
 
 type MachineSetSpec struct {
@@ -445,6 +475,106 @@ func (s *storageMachine) UpdateMachine(ctx request.Context, object *Machine) (*M
 }
 
 func (s *storageMachine) DeleteMachine(ctx request.Context, id string) (bool, error) {
+	st := s.GetStandardStorage()
+	_, sync, err := st.Delete(ctx, id, nil)
+	return sync, err
+}
+
+//
+// MachineClass Functions and Structs
+//
+// +k8s:deepcopy-gen=false
+type MachineClassStrategy struct {
+	builders.DefaultStorageStrategy
+}
+
+// +k8s:deepcopy-gen=false
+type MachineClassStatusStrategy struct {
+	builders.DefaultStatusStorageStrategy
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type MachineClassList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+	Items []MachineClass
+}
+
+func (pc *MachineClass) GetObjectMeta() *metav1.ObjectMeta {
+	return &pc.ObjectMeta
+}
+
+func (pc *MachineClass) SetGeneration(generation int64) {
+	pc.ObjectMeta.Generation = generation
+}
+
+func (pc MachineClass) GetGeneration() int64 {
+	return pc.ObjectMeta.Generation
+}
+
+// Registry is an interface for things that know how to store MachineClass.
+// +k8s:deepcopy-gen=false
+type MachineClassRegistry interface {
+	ListMachineClasss(ctx request.Context, options *internalversion.ListOptions) (*MachineClassList, error)
+	GetMachineClass(ctx request.Context, id string, options *metav1.GetOptions) (*MachineClass, error)
+	CreateMachineClass(ctx request.Context, id *MachineClass) (*MachineClass, error)
+	UpdateMachineClass(ctx request.Context, id *MachineClass) (*MachineClass, error)
+	DeleteMachineClass(ctx request.Context, id string) (bool, error)
+}
+
+// NewRegistry returns a new Registry interface for the given Storage. Any mismatched types will panic.
+func NewMachineClassRegistry(sp builders.StandardStorageProvider) MachineClassRegistry {
+	return &storageMachineClass{sp}
+}
+
+// Implement Registry
+// storage puts strong typing around storage calls
+// +k8s:deepcopy-gen=false
+type storageMachineClass struct {
+	builders.StandardStorageProvider
+}
+
+func (s *storageMachineClass) ListMachineClasss(ctx request.Context, options *internalversion.ListOptions) (*MachineClassList, error) {
+	if options != nil && options.FieldSelector != nil && !options.FieldSelector.Empty() {
+		return nil, fmt.Errorf("field selector not supported yet")
+	}
+	st := s.GetStandardStorage()
+	obj, err := st.List(ctx, options)
+	if err != nil {
+		return nil, err
+	}
+	return obj.(*MachineClassList), err
+}
+
+func (s *storageMachineClass) GetMachineClass(ctx request.Context, id string, options *metav1.GetOptions) (*MachineClass, error) {
+	st := s.GetStandardStorage()
+	obj, err := st.Get(ctx, id, options)
+	if err != nil {
+		return nil, err
+	}
+	return obj.(*MachineClass), nil
+}
+
+func (s *storageMachineClass) CreateMachineClass(ctx request.Context, object *MachineClass) (*MachineClass, error) {
+	st := s.GetStandardStorage()
+	obj, err := st.Create(ctx, object, false)
+	if err != nil {
+		return nil, err
+	}
+	return obj.(*MachineClass), nil
+}
+
+func (s *storageMachineClass) UpdateMachineClass(ctx request.Context, object *MachineClass) (*MachineClass, error) {
+	st := s.GetStandardStorage()
+	obj, _, err := st.Update(ctx, object.Name, rest.DefaultUpdatedObjectInfo(object, builders.Scheme))
+	if err != nil {
+		return nil, err
+	}
+	return obj.(*MachineClass), nil
+}
+
+func (s *storageMachineClass) DeleteMachineClass(ctx request.Context, id string) (bool, error) {
 	st := s.GetStandardStorage()
 	_, sync, err := st.Delete(ctx, id, nil)
 	return sync, err

@@ -19,4 +19,6 @@ type ClusterExpansion interface{}
 
 type MachineExpansion interface{}
 
+type MachineClassExpansion interface{}
+
 type MachineSetExpansion interface{}

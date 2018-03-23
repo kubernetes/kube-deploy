@@ -28,6 +28,8 @@ type Interface interface {
 	Clusters() ClusterInformer
 	// Machines returns a MachineInformer.
 	Machines() MachineInformer
+	// MachineClasses returns a MachineClassInformer.
+	MachineClasses() MachineClassInformer
 	// MachineSets returns a MachineSetInformer.
 	MachineSets() MachineSetInformer
 }
@@ -49,6 +51,11 @@ func (v *version) Clusters() ClusterInformer {
 // Machines returns a MachineInformer.
 func (v *version) Machines() MachineInformer {
 	return &machineInformer{factory: v.SharedInformerFactory}
+}
+
+// MachineClasses returns a MachineClassInformer.
+func (v *version) MachineClasses() MachineClassInformer {
+	return &machineClassInformer{factory: v.SharedInformerFactory}
 }
 
 // MachineSets returns a MachineSetInformer.

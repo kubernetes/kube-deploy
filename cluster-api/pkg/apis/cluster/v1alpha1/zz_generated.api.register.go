@@ -41,6 +41,13 @@ var (
 		func() runtime.Object { return &MachineList{} }, // Register versioned resource list
 		&MachineStrategy{builders.StorageStrategySingleton},
 	)
+	clusterMachineClassStorage = builders.NewApiResource( // Resource status endpoint
+		cluster.InternalMachineClass,
+		MachineClassSchemeFns{},
+		func() runtime.Object { return &MachineClass{} },     // Register versioned resource
+		func() runtime.Object { return &MachineClassList{} }, // Register versioned resource list
+		&cluster.MachineClassStrategy{builders.StorageStrategySingleton},
+	)
 	clusterMachineSetStorage = builders.NewApiResource( // Resource status endpoint
 		cluster.InternalMachineSet,
 		MachineSetSchemeFns{},
@@ -63,6 +70,13 @@ var (
 			func() runtime.Object { return &Machine{} },     // Register versioned resource
 			func() runtime.Object { return &MachineList{} }, // Register versioned resource list
 			&MachineStatusStrategy{builders.StatusStorageStrategySingleton},
+		), clusterMachineClassStorage,
+		builders.NewApiResource( // Resource status endpoint
+			cluster.InternalMachineClassStatus,
+			MachineClassSchemeFns{},
+			func() runtime.Object { return &MachineClass{} },     // Register versioned resource
+			func() runtime.Object { return &MachineClassList{} }, // Register versioned resource list
+			&cluster.MachineClassStatusStrategy{builders.StatusStorageStrategySingleton},
 		), clusterMachineSetStorage,
 		builders.NewApiResource( // Resource status endpoint
 			cluster.InternalMachineSetStatus,
@@ -141,6 +155,32 @@ type MachineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Machine `json:"items"`
+}
+
+//
+// MachineClass Functions and Structs
+//
+// +k8s:deepcopy-gen=false
+type MachineClassSchemeFns struct {
+	builders.DefaultSchemeFns
+}
+
+// +k8s:deepcopy-gen=false
+type MachineClassStrategy struct {
+	builders.DefaultStorageStrategy
+}
+
+// +k8s:deepcopy-gen=false
+type MachineClassStatusStrategy struct {
+	builders.DefaultStatusStorageStrategy
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type MachineClassList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []MachineClass `json:"items"`
 }
 
 //

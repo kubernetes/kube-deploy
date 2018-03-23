@@ -21212,6 +21212,191 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineSpec", "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineStatus"},
 		},
+		"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineClass": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "MachineClass can be used to templatize and re-use provider configuration across multiple Machines / MachineSets / MachineDeployments.",
+					Properties: map[string]spec.Schema{
+						"kind": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"apiVersion": {
+							SchemaProps: spec.SchemaProps{
+								Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"metadata": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+							},
+						},
+						"capacity": {
+							SchemaProps: spec.SchemaProps{
+								Description: "The total capacity available on this machine type (cpu/memory/disk).\n\nWARNING: It is up to the creator of the MachineClass to ensure that this field is consistent with the underlying machine that will be provisioned when this class is used, to inform higher level automation (e.g. the cluster autoscaler).",
+								Type:        []string{"object"},
+								AdditionalProperties: &spec.SchemaOrBool{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
+										},
+									},
+								},
+							},
+						},
+						"allocatable": {
+							SchemaProps: spec.SchemaProps{
+								Description: "How much capacity is actually allocatable on this machine. Must be equal to or less than the capacity, and when less indicates the resources reserved for system overhead.\n\nWARNING: It is up to the creator of the MachineClass to ensure that this field is consistent with the underlying machine that will be provisioned when this class is used, to inform higher level automation (e.g. the cluster autoscaler).",
+								Type:        []string{"object"},
+								AdditionalProperties: &spec.SchemaOrBool{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
+										},
+									},
+								},
+							},
+						},
+						"providerConfig": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Provider-specific configuration to use during node creation.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+					},
+					Required: []string{"capacity", "allocatable", "providerConfig"},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/apimachinery/pkg/api/resource.Quantity", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+		},
+		"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineClassList": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Properties: map[string]spec.Schema{
+						"kind": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"apiVersion": {
+							SchemaProps: spec.SchemaProps{
+								Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"metadata": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+							},
+						},
+						"items": {
+							SchemaProps: spec.SchemaProps{
+								Type: []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Ref: ref("k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineClass"),
+										},
+									},
+								},
+							},
+						},
+					},
+					Required: []string{"items"},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineClass"},
+		},
+		"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineClassRef": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Properties: map[string]spec.Schema{
+						"Name": {
+							SchemaProps: spec.SchemaProps{
+								Description: "The name of the MachineClass.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"Parameters": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Parameters allow basic substitution to be applied to a MachineClass (where supported). Keys must not be empty. The maximum number of parameters is 512, with a cumulative max size of 256K.",
+								Type:        []string{"object"},
+								AdditionalProperties: &spec.SchemaOrBool{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Type:   []string{"string"},
+											Format: "",
+										},
+									},
+								},
+							},
+						},
+					},
+					Required: []string{"Name"},
+				},
+			},
+			Dependencies: []string{},
+		},
+		"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineClassSchemeFns": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "MachineClass Functions and Structs",
+					Properties: map[string]spec.Schema{
+						"DefaultSchemeFns": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("github.com/kubernetes-incubator/apiserver-builder/pkg/builders.DefaultSchemeFns"),
+							},
+						},
+					},
+					Required: []string{"DefaultSchemeFns"},
+				},
+			},
+			Dependencies: []string{
+				"github.com/kubernetes-incubator/apiserver-builder/pkg/builders.DefaultSchemeFns"},
+		},
+		"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineClassStatusStrategy": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Properties: map[string]spec.Schema{
+						"DefaultStatusStorageStrategy": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("github.com/kubernetes-incubator/apiserver-builder/pkg/builders.DefaultStatusStorageStrategy"),
+							},
+						},
+					},
+					Required: []string{"DefaultStatusStorageStrategy"},
+				},
+			},
+			Dependencies: []string{
+				"github.com/kubernetes-incubator/apiserver-builder/pkg/builders.DefaultStatusStorageStrategy"},
+		},
+		"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineClassStrategy": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Properties: map[string]spec.Schema{
+						"DefaultStorageStrategy": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("github.com/kubernetes-incubator/apiserver-builder/pkg/builders.DefaultStorageStrategy"),
+							},
+						},
+					},
+					Required: []string{"DefaultStorageStrategy"},
+				},
+			},
+			Dependencies: []string{
+				"github.com/kubernetes-incubator/apiserver-builder/pkg/builders.DefaultStorageStrategy"},
+		},
 		"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineList": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -21525,9 +21710,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"providerConfig": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Provider-specific serialized configuration to use during node creation. It is recommended that providers maintain their own versioned API types that should be serialized/deserialized from this field, akin to component config.",
-								Type:        []string{"string"},
-								Format:      "",
+								Description: "Provider-specific configuration to use during node creation.",
+								Ref:         ref("k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.ProviderConfig"),
 							},
 						},
 						"roles": {
@@ -21560,7 +21744,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/api/core/v1.NodeConfigSource", "k8s.io/api/core/v1.Taint", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineVersionInfo"},
+				"k8s.io/api/core/v1.NodeConfigSource", "k8s.io/api/core/v1.Taint", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineVersionInfo", "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.ProviderConfig"},
 		},
 		"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineStatus": {
 			Schema: spec.Schema{
@@ -21713,6 +21897,46 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{},
+		},
+		"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.ProviderConfig": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ProviderConfig defines the configuration to use during node creation.",
+					Properties: map[string]spec.Schema{
+						"value": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Value is an inlined, serialized representation of the node configuration. It is recommended that providers maintain their own versioned API types that should be serialized/deserialized from this field, akin to component config.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"ValueFrom": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Source for the provider configuration. Cannot be used if value is not empty.",
+								Ref:         ref("k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.ProviderConfigSource"),
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/apimachinery/pkg/runtime.RawExtension", "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.ProviderConfigSource"},
+		},
+		"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.ProviderConfigSource": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "ProviderConfigSource represents a source for the provider-specific node configuration.",
+					Properties: map[string]spec.Schema{
+						"MachineClass": {
+							SchemaProps: spec.SchemaProps{
+								Description: "The machine class from which the provider config should be sourced.",
+								Ref:         ref("k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineClassRef"),
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.MachineClassRef"},
 		},
 	}
 }

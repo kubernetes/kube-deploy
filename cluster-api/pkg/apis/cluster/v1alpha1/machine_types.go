@@ -107,7 +107,24 @@ type ProviderConfig struct {
 // ProviderConfigSource represents a source for the provider-specific
 // node configuration.
 type ProviderConfigSource struct {
-	// TODO(roberthbailey): Fill these in later
+
+	// No more than one of the following may be specified.
+
+	// The machine class from which the provider config should be sourced.
+	// +optional
+	MachineClass *MachineClassRef `json:machineClass,omitempty`
+}
+
+type MachineClassRef struct {
+	// The name of the MachineClass.
+	Name string `json:name`
+
+	// Parameters allow basic substitution to be applied to
+	// a MachineClass (where supported).
+	// Keys must not be empty. The maximum number of
+	// parameters is 512, with a cumulative max size of 256K.
+	// +optional
+	Parameters map[string]string `json:parameters,omitempty`
 }
 
 // MachineStatus defines the observed state of Machine

@@ -37,6 +37,9 @@ import (
 
 	"regexp"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	gceconfig "k8s.io/kube-deploy/cluster-api/cloud/google/gceproviderconfig"
 	gceconfigv1 "k8s.io/kube-deploy/cluster-api/cloud/google/gceproviderconfig/v1alpha1"
 	"k8s.io/kube-deploy/cluster-api/cloud/google/machinesetup"
@@ -53,6 +56,8 @@ const (
 
 	UIDLabelKey       = "machine-crd-uid"
 	BootstrapLabelKey = "boostrap"
+
+	MachineSetupConfigsFilename = "machine_setup_configs.yaml"
 )
 
 type SshCreds struct {
@@ -128,7 +133,7 @@ func NewMachineActuator(kubeadmToken string, machineClient client.MachineInterfa
 	}, nil
 }
 
-func (gce *GCEClient) CreateMachineController(cluster *clusterv1.Cluster, initialMachines []*clusterv1.Machine) error {
+func (gce *GCEClient) CreateMachineController(cluster *clusterv1.Cluster, initialMachines []*clusterv1.Machine, clientSet kubernetes.Clientset) error {
 	if err := gce.CreateMachineControllerServiceAccount(cluster, initialMachines); err != nil {
 		return err
 	}
@@ -139,6 +144,26 @@ func (gce *GCEClient) CreateMachineController(cluster *clusterv1.Cluster, initia
 	}
 
 	if err := CreateExtApiServerRoleBinding(); err != nil {
+		return err
+	}
+
+	// Create the configmap so the machine setup configs can be mounted into the node.
+	machineSetupConfigs, err := gce.configWatch.ValidConfigs()
+	if err != nil {
+		return err
+	}
+	yaml, err := machineSetupConfigs.GetYaml()
+	if err != nil {
+		return err
+	}
+	configMap := corev1.ConfigMap{
+		ObjectMeta: v1.ObjectMeta{Name: "machine-setup"},
+		Data: map[string]string{
+			MachineSetupConfigsFilename: yaml,
+		},
+	}
+	configMaps := clientSet.CoreV1().ConfigMaps(corev1.NamespaceDefault)
+	if _, err := configMaps.Create(&configMap); err != nil {
 		return err
 	}
 

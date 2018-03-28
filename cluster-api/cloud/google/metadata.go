@@ -87,15 +87,15 @@ const masterEnvironmentVars = `
 #!/bin/bash
 
 KUBELET_VERSION={{ .Machine.Spec.Versions.Kubelet }}
-export VERSION=v${KUBELET_VERSION}
-export ARCH=amd64
+VERSION=v${KUBELET_VERSION}
+ARCH=amd64
 TOKEN={{ .Token }}
 PORT=443
 MACHINE={{ .Machine.ObjectMeta.Name }}
 CONTROL_PLANE_VERSION={{ .Machine.Spec.Versions.ControlPlane }}
 CLUSTER_DNS_DOMAIN={{ .Cluster.Spec.ClusterNetwork.DNSDomain }}
 POD_CIDR={{ .PodCIDR }}
-SERVICE_CIDER={{ .ServiceCIDR }}
+SERVICE_CIDR={{ .ServiceCIDR }}
 
 # Environment variables for GCE cloud config
 PROJECT={{ .Project }}

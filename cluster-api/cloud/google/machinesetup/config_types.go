@@ -76,6 +76,14 @@ func parseMachineSetupYaml(reader io.Reader) (*ValidConfigs, error) {
 	return &ValidConfigs{configList}, nil
 }
 
+func (vc *ValidConfigs) GetYaml() (string, error) {
+	bytes, err := yaml.Marshal(vc.configList)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
 func (vc *ValidConfigs) GetImage(params *ConfigParams) (string, error) {
 	machineSetupConfig, err := vc.matchMachineSetupConfig(params)
 	if err != nil {

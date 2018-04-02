@@ -27,5 +27,5 @@ type GCEProviderConfig struct {
 	Project     string `json:"project"`
 	Zone        string `json:"zone"`
 	MachineType string `json:"machineType"`
-	Image       string `json:"image"`
+	OS          string `json:"os"`
 }

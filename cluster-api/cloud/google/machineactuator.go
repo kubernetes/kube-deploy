@@ -189,9 +189,6 @@ func (gce *GCEClient) Create(cluster *clusterv1.Cluster, machine *clusterv1.Mach
 		return errors.New("invalid master configuration: missing Machine.Spec.Versions.Kubelet")
 	}
 
-	if gce.configWatch == nil {
-		return errors.New("invalid machine setup configuration: missing GCEClient.ConfigWatch")
-	}
 	machineSetupConfigs, err := gce.configWatch.ValidConfigs()
 	if err != nil {
 		return err

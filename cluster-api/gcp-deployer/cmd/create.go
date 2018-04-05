@@ -76,7 +76,7 @@ func RunCreate(co *CreateOptions) error {
 func init() {
 	createCmd.Flags().StringVarP(&co.Cluster, "cluster", "c", "", "cluster yaml file")
 	createCmd.Flags().StringVarP(&co.Machine, "machines", "m", "", "machine yaml file")
-	createCmd.Flags().StringVarP(&co.MachineSetup, "setup", "s", "", "machine setup configs yaml file")
+	createCmd.Flags().StringVarP(&co.MachineSetup, "machinesetup", "s", "machine_setup_configs.yaml", "machine setup configs yaml file")
 
 	RootCmd.AddCommand(createCmd)
 }

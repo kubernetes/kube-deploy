@@ -1,12 +1,29 @@
+/*
+Copyright 2018 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package machinesetup
 
 import (
 	"io"
-	clustercommon "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/common"
-	clusterv1 "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1"
 	"reflect"
 	"strings"
 	"testing"
+
+	clustercommon "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/common"
+	clusterv1 "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 func TestParseMachineSetupYaml(t *testing.T) {
@@ -226,10 +243,30 @@ func TestMatchMachineSetupConfig(t *testing.T) {
 			StartupScript: "Node startup script",
 		},
 	}
+	multiRoleSetupConfig := config{
+		Params: []ConfigParams{
+			{
+				OS:    "ubuntu-1710",
+				Roles: []clustercommon.MachineRole{clustercommon.MasterRole, clustercommon.NodeRole},
+				Versions: clusterv1.MachineVersionInfo{
+					Kubelet:      "1.9.5",
+					ControlPlane: "1.9.5",
+					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
+						Name:    "docker",
+						Version: "1.12.0",
+					},
+				},
+			},
+		},
+		Image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-1710",
+		Metadata: Metadata{
+			StartupScript: "Multi-role startup script",
+		},
+	}
 
 	validConfigs := ValidConfigs{
 		configList: &configList{
-			Items: []config{masterMachineSetupConfig, nodeMachineSetupConfig},
+			Items: []config{masterMachineSetupConfig, nodeMachineSetupConfig, multiRoleSetupConfig},
 		},
 	}
 
@@ -272,9 +309,25 @@ func TestMatchMachineSetupConfig(t *testing.T) {
 		{
 			params: ConfigParams{
 				OS:    "ubuntu-1710",
+				Roles: []clustercommon.MachineRole{clustercommon.MasterRole},
+				Versions: clusterv1.MachineVersionInfo{
+					Kubelet:      "1.9.5",
+					ControlPlane: "1.9.5",
+					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
+						Name:    "docker",
+						Version: "1.12.0",
+					},
+				},
+			},
+			expectedMatch: &multiRoleSetupConfig,
+			expectedErr:   false,
+		},
+		{
+			params: ConfigParams{
+				OS:    "ubuntu-1710",
 				Roles: []clustercommon.MachineRole{clustercommon.NodeRole},
 				Versions: clusterv1.MachineVersionInfo{
-					Kubelet:      "1.9.4",
+					Kubelet: "1.9.4",
 					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
 						Name:    "docker",
 						Version: "1.13.0",
@@ -306,10 +359,10 @@ func TestMatchMachineSetupConfig(t *testing.T) {
 		if !reflect.DeepEqual(matched, table.expectedMatch) {
 			t.Errorf("Matched machine setup config was incorrect, got: %+v,\n want %+v.", matched, table.expectedMatch)
 		}
-		if table.expectedErr && err == nil {
+		if err == nil && table.expectedErr {
 			t.Errorf("An error was not received as expected.")
 		}
-		if !table.expectedErr && err != nil {
+		if err != nil && !table.expectedErr {
 			t.Errorf("Got unexpected error: %s", err)
 		}
 	}

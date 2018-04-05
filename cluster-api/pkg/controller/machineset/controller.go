@@ -123,6 +123,16 @@ func (c *MachineSetControllerImpl) createMachine(machineSet *v1alpha1.MachineSet
 		Spec:       machineSet.Spec.Template.Spec,
 	}
 	machine.ObjectMeta.GenerateName = fmt.Sprintf("%s-", machineSet.Name)
+	blockOwnerDeletion := true
+	machine.ObjectMeta.OwnerReferences = []metav1.OwnerReference{
+		{
+			Kind: "MachineSet",
+			Name: machineSet.ObjectMeta.GetName(),
+			UID: machineSet.ObjectMeta.GetUID(),
+			APIVersion: v1alpha1.SchemeGroupVersion.String(),
+			BlockOwnerDeletion: &blockOwnerDeletion,
+		},
+	}
 
 	return machine, nil
 }

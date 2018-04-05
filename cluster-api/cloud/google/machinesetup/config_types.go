@@ -1,18 +1,35 @@
+/*
+Copyright 2018 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package machinesetup
 
 import (
 	"fmt"
-	"github.com/ghodss/yaml"
 	"io"
 	"io/ioutil"
+	"os"
+
+	"github.com/ghodss/yaml"
 	clustercommon "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/common"
 	clusterv1 "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1"
 	"k8s.io/kube-deploy/cluster-api/util"
-	"os"
 )
 
 type ConfigWatch struct {
-	Path string
+	path string
 }
 
 type ValidConfigs struct {
@@ -47,11 +64,11 @@ func NewConfigWatch(path string) (*ConfigWatch, error) {
 	if _, err := os.Stat(path); err != nil {
 		return nil, err
 	}
-	return &ConfigWatch{Path: path}, nil
+	return &ConfigWatch{path: path}, nil
 }
 
 func (cw *ConfigWatch) ValidConfigs() (*ValidConfigs, error) {
-	file, err := os.Open(cw.Path)
+	file, err := os.Open(cw.path)
 	if err != nil {
 		return nil, err
 	}

@@ -202,7 +202,7 @@ func (gce *GCEClient) Create(cluster *clusterv1.Cluster, machine *clusterv1.Mach
 	if err != nil {
 		return err
 	}
-	imagePath := gce.getImagePath(image, config.Project)
+	imagePath := gce.getImagePath(image)
 
 	machineSetupMetadata, err := machineSetupConfigs.GetMetadata(configParams)
 	if err != nil {
@@ -686,35 +686,24 @@ func (gce *GCEClient) handleMachineError(machine *clusterv1.Machine, err *apierr
 	return err
 }
 
-func (gce *GCEClient) getImagePath(img string, project string) (imagePath string) {
+func (gce *GCEClient) getImagePath(img string) (imagePath string) {
 	defaultImg := "projects/ubuntu-os-cloud/global/images/family/ubuntu-1710"
 
-	// A full image path must match the regex format. If it doesn't, we'll assume it's just the image name and try to get it.
-	// If that doesn't work, we will fall back to a default base image.
+	// A full image path must match the regex format. If it doesn't, we will fall back to a default base image.
 	matches := regexp.MustCompile("projects/(.+)/global/images/(family/)*(.+)").FindStringSubmatch(img)
-	if matches == nil {
-		// Only the image name was specified in config, so check if it exists in the project specified in config.
-		fullPath := fmt.Sprintf("projects/%s/global/images/%s", project, img)
-		if _, err := gce.service.Images.Get(project, img).Do(); err == nil {
-			return fullPath
+	if matches != nil {
+		// Check to see if the image exists in the given path. The presence of "family" in the path dictates which API call we need to make.
+		project, family, name := matches[1], matches[2], matches[3]
+		var err error
+		if family == "" {
+			_, err = gce.service.Images.Get(project, name).Do()
+		} else {
+			_, err = gce.service.Images.GetFromFamily(project, name).Do()
 		}
 
-		// Otherwise, fall back to the base image.
-		glog.Infof("Could not find image at %s. Defaulting to %s.", fullPath, defaultImg)
-		return defaultImg
-	}
-
-	// Check to see if the image exists in the given path. The presence of "family" in the path dictates which API call we need to make.
-	project, family, name := matches[1], matches[2], matches[3]
-	var err error
-	if family == "" {
-		_, err = gce.service.Images.Get(project, name).Do()
-	} else {
-		_, err = gce.service.Images.GetFromFamily(project, name).Do()
-	}
-
-	if err == nil {
-		return img
+		if err == nil {
+			return img
+		}
 	}
 
 	// Otherwise, fall back to the base image.

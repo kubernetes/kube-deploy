@@ -41,12 +41,12 @@ type metadataParams struct {
 
 func nodeMetadata(token string, cluster *clusterv1.Cluster, machine *clusterv1.Machine, metadata *machinesetup.Metadata) (map[string]string, error) {
 	params := metadataParams{
-		Token: token,
-		Cluster: cluster,
-		Machine: machine,
-		Metadata: metadata,
-		PodCIDR: getSubnet(cluster.Spec.ClusterNetwork.Pods),
-		ServiceCIDR: getSubnet(cluster.Spec.ClusterNetwork.Services),
+		Token:          token,
+		Cluster:        cluster,
+		Machine:        machine,
+		Metadata:       metadata,
+		PodCIDR:        getSubnet(cluster.Spec.ClusterNetwork.Pods),
+		ServiceCIDR:    getSubnet(cluster.Spec.ClusterNetwork.Services),
 		MasterEndpoint: getEndpoint(cluster.Status.APIEndpoints[0]),
 	}
 
@@ -62,12 +62,12 @@ func nodeMetadata(token string, cluster *clusterv1.Cluster, machine *clusterv1.M
 
 func masterMetadata(token string, cluster *clusterv1.Cluster, machine *clusterv1.Machine, project string, metadata *machinesetup.Metadata) (map[string]string, error) {
 	params := metadataParams{
-		Token: token,
-		Cluster: cluster,
-		Machine: machine,
-		Project: project,
-		Metadata: metadata,
-		PodCIDR: getSubnet(cluster.Spec.ClusterNetwork.Pods),
+		Token:       token,
+		Cluster:     cluster,
+		Machine:     machine,
+		Project:     project,
+		Metadata:    metadata,
+		PodCIDR:     getSubnet(cluster.Spec.ClusterNetwork.Pods),
 		ServiceCIDR: getSubnet(cluster.Spec.ClusterNetwork.Services),
 	}
 
@@ -106,7 +106,7 @@ TOKEN={{ .Token }}
 PORT=443
 MACHINE={{ .Machine.ObjectMeta.Name }}
 CONTROL_PLANE_VERSION={{ .Machine.Spec.Versions.ControlPlane }}
-CLUSTER_DNS_DOMAIN={{ .Cluster.Spec.ClusterNetwork.DNSDomain }}
+CLUSTER_DNS_DOMAIN={{ .Cluster.Spec.ClusterNetwork.ServiceDomain }}
 POD_CIDR={{ .PodCIDR }}
 SERVICE_CIDR={{ .ServiceCIDR }}
 
@@ -124,7 +124,7 @@ KUBELET_VERSION={{ .Machine.Spec.Versions.Kubelet }}
 TOKEN={{ .Token }}
 MASTER={{ .MasterEndpoint }}
 MACHINE={{ .Machine.ObjectMeta.Name }}
-CLUSTER_DNS_DOMAIN={{ .Cluster.Spec.ClusterNetwork.DNSDomain }}
+CLUSTER_DNS_DOMAIN={{ .Cluster.Spec.ClusterNetwork.ServiceDomain }}
 POD_CIDR={{ .PodCIDR }}
 SERVICE_CIDER={{ .ServiceCIDR }}
 `

@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,36 +39,49 @@ type metadataParams struct {
 	MasterEndpoint string
 }
 
-func nodeMetadata(params metadataParams) (map[string]string, error) {
-	params.PodCIDR = getSubnet(params.Cluster.Spec.ClusterNetwork.Pods)
-	params.ServiceCIDR = getSubnet(params.Cluster.Spec.ClusterNetwork.Services)
-	params.MasterEndpoint = getEndpoint(&params.Cluster.Status.APIEndpoints[0])
+func nodeMetadata(token string, cluster *clusterv1.Cluster, machine *clusterv1.Machine, metadata *machinesetup.Metadata) (map[string]string, error) {
+	params := metadataParams{
+		Token: token,
+		Cluster: cluster,
+		Machine: machine,
+		Metadata: metadata,
+		PodCIDR: getSubnet(cluster.Spec.ClusterNetwork.Pods),
+		ServiceCIDR: getSubnet(cluster.Spec.ClusterNetwork.Services),
+		MasterEndpoint: getEndpoint(cluster.Status.APIEndpoints[0]),
+	}
 
-	metadata := map[string]string{}
+	nodeMetadata := map[string]string{}
 	var buf bytes.Buffer
 	if err := nodeEnvironmentVarsTemplate.Execute(&buf, params); err != nil {
 		return nil, err
 	}
 	buf.WriteString(params.Metadata.StartupScript)
-	metadata["startup-script"] = buf.String()
-	return metadata, nil
+	nodeMetadata["startup-script"] = buf.String()
+	return nodeMetadata, nil
 }
 
-func masterMetadata(params metadataParams) (map[string]string, error) {
-	params.PodCIDR = getSubnet(params.Cluster.Spec.ClusterNetwork.Pods)
-	params.ServiceCIDR = getSubnet(params.Cluster.Spec.ClusterNetwork.Services)
+func masterMetadata(token string, cluster *clusterv1.Cluster, machine *clusterv1.Machine, project string, metadata *machinesetup.Metadata) (map[string]string, error) {
+	params := metadataParams{
+		Token: token,
+		Cluster: cluster,
+		Machine: machine,
+		Project: project,
+		Metadata: metadata,
+		PodCIDR: getSubnet(cluster.Spec.ClusterNetwork.Pods),
+		ServiceCIDR: getSubnet(cluster.Spec.ClusterNetwork.Services),
+	}
 
-	metadata := map[string]string{}
+	masterMetadata := map[string]string{}
 	var buf bytes.Buffer
 	if err := masterEnvironmentVarsTemplate.Execute(&buf, params); err != nil {
 		return nil, err
 	}
 	buf.WriteString(params.Metadata.StartupScript)
-	metadata["startup-script"] = buf.String()
-	return metadata, nil
+	masterMetadata["startup-script"] = buf.String()
+	return masterMetadata, nil
 }
 
-func getEndpoint(apiEndpoint *clusterv1.APIEndpoint) string {
+func getEndpoint(apiEndpoint clusterv1.APIEndpoint) string {
 	return fmt.Sprintf("%s:%d", apiEndpoint.Host, apiEndpoint.Port)
 }
 

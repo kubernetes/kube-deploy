@@ -214,15 +214,7 @@ func (gce *GCEClient) Create(cluster *clusterv1.Cluster, machine *clusterv1.Mach
 				"invalid master configuration: missing Machine.Spec.Versions.ControlPlane"))
 		}
 		var err error
-		metadata, err = masterMetadata(
-			metadataParams{
-				Token:    gce.kubeadmToken,
-				Cluster:  cluster,
-				Machine:  machine,
-				Project:  config.Project,
-				Metadata: &machineSetupMetadata,
-			},
-		)
+		metadata, err = masterMetadata(gce.kubeadmToken, cluster, machine, config.Project, &machineSetupMetadata)
 		if err != nil {
 			return err
 		}
@@ -231,14 +223,7 @@ func (gce *GCEClient) Create(cluster *clusterv1.Cluster, machine *clusterv1.Mach
 			return errors.New("invalid cluster state: cannot create a Kubernetes node without an API endpoint")
 		}
 		var err error
-		metadata, err = nodeMetadata(
-			metadataParams{
-				Token:    gce.kubeadmToken,
-				Cluster:  cluster,
-				Machine:  machine,
-				Metadata: &machineSetupMetadata,
-			},
-		)
+		metadata, err = nodeMetadata(gce.kubeadmToken, cluster, machine, &machineSetupMetadata)
 		if err != nil {
 			return err
 		}

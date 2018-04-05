@@ -15,7 +15,7 @@ items:
       set -x
 
       (
-        apt-get update
+      apt-get update
       apt-get install -y apt-transport-https prips
       apt-key adv --keyserver hkp://keyserver.ubuntu.com --recv-keys F76221572C52609D
 
@@ -71,7 +71,7 @@ items:
       	kubectl --kubeconfig /etc/kubernetes/kubelet.conf annotate --overwrite node $(hostname) machine=${MACHINE} && break
       	sleep 1
       done
-        echo done.
+      echo done.
       ) 2>&1 | tee /var/log/startup.log
 - machineParams:
   - os: ubuntu-1710-weave
@@ -316,7 +316,7 @@ items:
       set -x
 
       (
-        apt-get update
+      apt-get update
       apt-get install -y apt-transport-https prips
       apt-key adv --keyserver hkp://keyserver.ubuntu.com --recv-keys F76221572C52609D
 

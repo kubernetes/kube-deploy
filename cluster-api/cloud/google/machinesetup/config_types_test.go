@@ -166,10 +166,10 @@ func TestGetYaml(t *testing.T) {
 
 	for _, table := range testTables {
 		yaml, err := table.validConfigs.GetYaml()
-		if table.expectedErr && err == nil {
+		if err == nil && table.expectedErr {
 			t.Errorf("An error was not received as expected.")
 		}
-		if !table.expectedErr && err != nil {
+		if err != nil && !table.expectedErr {
 			t.Errorf("Got unexpected error: %s", err)
 		}
 		for _, expectedString := range table.expectedStrings {

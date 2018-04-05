@@ -111,6 +111,7 @@ func NewMachineActuator(kubeadmToken string, machineClient client.MachineInterfa
 		}
 	}
 
+	// TODO: get rid of empty string check when we switch to the new bootstrapping method.
 	var configWatch *machinesetup.ConfigWatch
 	if configListPath != "" {
 		configWatch, err = machinesetup.NewConfigWatch(configListPath)

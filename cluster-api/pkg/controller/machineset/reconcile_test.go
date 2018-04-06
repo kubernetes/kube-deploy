@@ -207,6 +207,16 @@ func machineFromMachineSet(machineSet *v1alpha1.MachineSet, name string) *v1alph
 
 	amachine.Name = name
 	amachine.GenerateName = fmt.Sprintf("%s-", machineSet.Name)
+	blockOwnerDeletion := true
+	amachine.ObjectMeta.OwnerReferences = []metav1.OwnerReference{
+		{
+			Kind: "MachineSet",
+			Name: machineSet.ObjectMeta.GetName(),
+			UID: machineSet.ObjectMeta.GetUID(),
+			APIVersion: v1alpha1.SchemeGroupVersion.String(),
+			BlockOwnerDeletion: &blockOwnerDeletion,
+		},
+	}
 
 	return amachine
 }

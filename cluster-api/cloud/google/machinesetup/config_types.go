@@ -22,10 +22,11 @@ import (
 	"io/ioutil"
 	"os"
 
+	"reflect"
+
 	"github.com/ghodss/yaml"
 	clustercommon "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/common"
 	clusterv1 "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1"
-	"k8s.io/kube-deploy/cluster-api/util"
 )
 
 type ConfigWatch struct {
@@ -120,17 +121,9 @@ func (vc *ValidConfigs) matchMachineSetupConfig(params *ConfigParams) (*config, 
 			if params.OS != validParams.OS {
 				continue
 			}
-			if len(params.Roles) != len(validParams.Roles) {
-				continue
-			}
-			foundRoles := true
-			for _, role := range params.Roles {
-				if !util.RoleContains(role, validParams.Roles) {
-					foundRoles = false
-					break
-				}
-			}
-			if !foundRoles {
+			validRoles := rolesToMap(validParams.Roles)
+			paramRoles := rolesToMap(params.Roles)
+			if !reflect.DeepEqual(paramRoles, validRoles) {
 				continue
 			}
 			if params.Versions != validParams.Versions {
@@ -140,4 +133,12 @@ func (vc *ValidConfigs) matchMachineSetupConfig(params *ConfigParams) (*config, 
 		}
 	}
 	return nil, fmt.Errorf("could not find a matching machine setup config for params %+v", params)
+}
+
+func rolesToMap(roles []clustercommon.MachineRole) map[clustercommon.MachineRole]int {
+	rolesMap := map[clustercommon.MachineRole]int{}
+	for _, role := range roles {
+		rolesMap[role] = rolesMap[role] + 1
+	}
+	return rolesMap
 }

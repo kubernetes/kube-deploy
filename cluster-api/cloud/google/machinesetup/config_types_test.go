@@ -352,6 +352,22 @@ func TestMatchMachineSetupConfig(t *testing.T) {
 			expectedMatch: nil,
 			expectedErr:   true,
 		},
+		{
+			params: ConfigParams{
+				OS:    "ubuntu-1710",
+				Roles: []clustercommon.MachineRole{clustercommon.MasterRole, clustercommon.MasterRole},
+				Versions: clusterv1.MachineVersionInfo{
+					Kubelet:      "1.9.5",
+					ControlPlane: "1.9.5",
+					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
+						Name:    "docker",
+						Version: "1.12.0",
+					},
+				},
+			},
+			expectedMatch: nil,
+			expectedErr:   true,
+		},
 	}
 
 	for _, table := range testTables {

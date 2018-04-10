@@ -90,6 +90,7 @@ items:
       set -x
 
       (
+      ARCH=amd64
       curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
       touch /etc/apt/sources.list.d/kubernetes.list
       sh -c 'echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list'
@@ -201,6 +202,7 @@ items:
       set -x
 
       (
+      ARCH=amd64
       curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
       touch /etc/apt/sources.list.d/kubernetes.list
       sh -c 'echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list'

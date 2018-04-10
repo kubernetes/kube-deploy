@@ -101,7 +101,6 @@ const masterEnvironmentVars = `
 
 KUBELET_VERSION={{ .Machine.Spec.Versions.Kubelet }}
 VERSION=v${KUBELET_VERSION}
-ARCH=amd64
 TOKEN={{ .Token }}
 PORT=443
 MACHINE={{ .Machine.ObjectMeta.Name }}

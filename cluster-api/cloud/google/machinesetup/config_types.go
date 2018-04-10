@@ -120,6 +120,9 @@ func (vc *ValidConfigs) matchMachineSetupConfig(params *ConfigParams) (*config, 
 			if params.OS != validParams.OS {
 				continue
 			}
+			if len(params.Roles) != len(validParams.Roles) {
+				continue
+			}
 			foundRoles := true
 			for _, role := range params.Roles {
 				if !util.RoleContains(role, validParams.Roles) {

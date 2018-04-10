@@ -319,8 +319,8 @@ func TestMatchMachineSetupConfig(t *testing.T) {
 					},
 				},
 			},
-			expectedMatch: &multiRoleSetupConfig,
-			expectedErr:   false,
+			expectedMatch: nil,
+			expectedErr:   true,
 		},
 		{
 			params: ConfigParams{

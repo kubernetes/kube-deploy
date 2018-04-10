@@ -28,6 +28,9 @@ import (
 	"k8s.io/kube-deploy/cluster-api/pkg/controller/sharedinformers"
 )
 
+// controllerKind contains the schema.GroupVersionKind for this controller type.
+var controllerKind = v1alpha1.SchemeGroupVersion.WithKind("MachineSet")
+
 // +controller:group=cluster,version=v1alpha1,kind=MachineSet,resource=machinesets
 type MachineSetControllerImpl struct {
 	builders.DefaultControllerFns
@@ -79,6 +82,17 @@ func (c *MachineSetControllerImpl) syncReplicas(machineSet *v1alpha1.MachineSet,
 	desiredReplicas := *machineSet.Spec.Replicas
 	diff := int(currentMachineCount - desiredReplicas)
 
+	// Take ownership of machines if not already owned.
+	for _, machine := range machines {
+		if !metav1.IsControlledBy(machine, machineSet) {
+			glog.Infof("MachineSet (%v) does not own machine (%v).", machineSet.Name, machine.Name)
+			machine.ObjectMeta.OwnerReferences = []metav1.OwnerReference{*metav1.NewControllerRef(machineSet, controllerKind),}
+			if _, err := c.machineClient.ClusterV1alpha1().Machines(machineSet.Namespace).Update(machine); err != nil {
+				glog.Warningf("Failed to update machine owner reference. %v", err)
+			}
+		}
+	}
+
 	if diff < 0 {
 		diff *= -1
 		for i := 0; i < diff; i++ {
@@ -123,18 +137,7 @@ func (c *MachineSetControllerImpl) createMachine(machineSet *v1alpha1.MachineSet
 		Spec:       machineSet.Spec.Template.Spec,
 	}
 	machine.ObjectMeta.GenerateName = fmt.Sprintf("%s-", machineSet.Name)
-	controller := true
-	blockOwnerDeletion := true
-	machine.ObjectMeta.OwnerReferences = []metav1.OwnerReference{
-		{
-			Kind: "MachineSet",
-			Name: machineSet.ObjectMeta.GetName(),
-			UID: machineSet.ObjectMeta.GetUID(),
-			APIVersion: v1alpha1.SchemeGroupVersion.String(),
-			Controller: &controller,
-			BlockOwnerDeletion: &blockOwnerDeletion,
-		},
-	}
+	machine.ObjectMeta.OwnerReferences = []metav1.OwnerReference{*metav1.NewControllerRef(machineSet, controllerKind),}
 
 	return machine, nil
 }

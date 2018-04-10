@@ -91,6 +91,15 @@ func TestMachineSetControllerReconcileHandler(t *testing.T) {
 			namespaceToSync:     "acme",
 			expectedActions:     []string{"create"},
 		},
+		{
+			name:                "scenario 7: the current machine is missing owner refs, machine should be adopted.",
+			startingMachineSets: []*v1alpha1.MachineSet{createMachineSet(1, "foo", "bar2", "acme")},
+			startingMachines:    []*v1alpha1.Machine{machineWithoutOwnerReferences(createMachineSet(1, "foo", "bar1", "acme"), "bar1")},
+			machineSetToSync:    "foo",
+			namespaceToSync:     "acme",
+			expectedActions:     []string{"update"},
+			expectedMachine:     machineFromMachineSet(createMachineSet(1, "foo", "bar2", "acme"), "bar1"),
+		},
 	}
 
 	for _, test := range tests {
@@ -153,10 +162,19 @@ func TestMachineSetControllerReconcileHandler(t *testing.T) {
 						actualMachine = createAction.GetObject().(*v1alpha1.Machine)
 						break
 					}
+					if action.GetVerb() == "update" {
+						updateAction, ok := action.(clienttesting.UpdateAction)
+						if !ok {
+							t.Fatalf("unexpected action %#v", action)
+						}
+						actualMachine = updateAction.GetObject().(*v1alpha1.Machine)
+						break
+					}
 				}
 
 				if !equality.Semantic.DeepEqual(actualMachine, test.expectedMachine) {
-					t.Fatalf("acutal machine is different from the expected one: %v", diff.ObjectDiff(test.expectedMachine, actualMachine))
+					t.Fatalf("actual machine is different from the expected one: %v", diff.ObjectDiff(test.expectedMachine, actualMachine))
+
 				}
 			}
 		})
@@ -196,17 +214,8 @@ func createMachineSet(replicas int, machineSetName string, machineName string, n
 }
 
 func machineFromMachineSet(machineSet *v1alpha1.MachineSet, name string) *v1alpha1.Machine {
-	amachine := &v1alpha1.Machine{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Machine",
-			APIVersion: v1alpha1.SchemeGroupVersion.String(),
-		},
-		ObjectMeta: machineSet.Spec.Template.ObjectMeta,
-		Spec:       machineSet.Spec.Template.Spec,
-	}
+	amachine := machineWithoutOwnerReferences(machineSet, name)
 
-	amachine.Name = name
-	amachine.GenerateName = fmt.Sprintf("%s-", machineSet.Name)
 	controller := true
 	blockOwnerDeletion := true
 	amachine.ObjectMeta.OwnerReferences = []metav1.OwnerReference{
@@ -219,6 +228,22 @@ func machineFromMachineSet(machineSet *v1alpha1.MachineSet, name string) *v1alph
 			BlockOwnerDeletion: &blockOwnerDeletion,
 		},
 	}
+
+	return amachine
+}
+
+func machineWithoutOwnerReferences(machineSet *v1alpha1.MachineSet, name string) *v1alpha1.Machine {
+	amachine := &v1alpha1.Machine{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Machine",
+			APIVersion: v1alpha1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: machineSet.Spec.Template.ObjectMeta,
+		Spec:       machineSet.Spec.Template.Spec,
+	}
+
+	amachine.Name = name
+	amachine.GenerateName = fmt.Sprintf("%s-", machineSet.Name)
 
 	return amachine
 }

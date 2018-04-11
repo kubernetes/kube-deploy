@@ -21,7 +21,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/apiserver-builder/pkg/builders"
 
-	"k8s.io/apimachinery/pkg/labels"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1"
 	machineclientset "k8s.io/kube-deploy/cluster-api/pkg/client/clientset_generated/clientset"

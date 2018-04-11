@@ -32,6 +32,10 @@ import (
 	v1alpha1listers "k8s.io/kube-deploy/cluster-api/pkg/client/listers_generated/cluster/v1alpha1"
 )
 
+const (
+	labelKey = "type"
+)
+
 func TestMachineSetControllerReconcileHandler(t *testing.T) {
 	tests := []struct {
 		name                string
@@ -102,29 +106,29 @@ func TestMachineSetControllerReconcileHandler(t *testing.T) {
 			expectedMachine:     machineFromMachineSet(createMachineSet(1, "foo", "bar2", "acme"), "bar1"),
 		},
 		{
-			name:                "scenario 8: the current machine has different controller ref, machine should not be adopted.",
+			name:                "scenario 8: the current machine has different controller ref, do nothing.",
 			startingMachineSets: []*v1alpha1.MachineSet{createMachineSet(1, "foo", "bar2", "acme")},
-			startingMachines:    []*v1alpha1.Machine{setDifferentUID(machineFromMachineSet(createMachineSet(1, "foo", "bar1", "acme"), "bar1"))},
+			startingMachines:    []*v1alpha1.Machine{setDifferentOwnerUID(machineFromMachineSet(createMachineSet(1, "foo", "bar1", "acme"), "bar1"))},
 			machineSetToSync:    "foo",
 			namespaceToSync:     "acme",
-			expectedActions:     []string{"create"},
+			expectedActions:     []string{},
 		},
 		{
-			name:                "scenario 9: the current machine is being deleted, thus a machine is created.",
+			name:                "scenario 9: the current machine is being deleted, do nothing.",
 			startingMachineSets: []*v1alpha1.MachineSet{createMachineSet(1, "foo", "bar2", "acme")},
 			startingMachines:    []*v1alpha1.Machine{setMachineDeleting(machineFromMachineSet(createMachineSet(1, "foo", "bar1", "acme"), "bar1"))},
 			machineSetToSync:    "foo",
 			namespaceToSync:     "acme",
-			expectedActions:     []string{"create"},
+			expectedActions:     []string{},
 		},
 		{
 			name:                "scenario 10: the current machine has no controller refs, owner refs preserved, machine should be adopted.",
 			startingMachineSets: []*v1alpha1.MachineSet{createMachineSet(1, "foo", "bar2", "acme")},
-			startingMachines:    []*v1alpha1.Machine{setNonControllerRef(setDifferentUID(machineFromMachineSet(createMachineSet(1, "foo", "bar1", "acme"), "bar1")))},
+			startingMachines:    []*v1alpha1.Machine{setNonControllerRef(setDifferentOwnerUID(machineFromMachineSet(createMachineSet(1, "foo", "bar1", "acme"), "bar1")))},
 			machineSetToSync:    "foo",
 			namespaceToSync:     "acme",
 			expectedActions:     []string{"update"},
-			expectedMachine:     machineWithPreservedExistingOwnerRefs(createMachineSet(1, "foo", "bar2", "acme"), "bar1"),
+			expectedMachine:     machineWithMultipleOwnerRefs(createMachineSet(1, "foo", "bar2", "acme"), "bar1"),
 		},
 	}
 
@@ -221,13 +225,13 @@ func createMachineSet(replicas int, machineSetName string, machineName string, n
 		Spec: v1alpha1.MachineSetSpec{
 			Replicas: &replicasInt32,
 			Selector:metav1.LabelSelector{
-				MatchLabels: map[string]string{"type":"strongMachine"},
+				MatchLabels: map[string]string{labelKey:"strongMachine"},
 			},
 			Template: v1alpha1.MachineTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      machineName,
 					Namespace: namespace,
-					Labels: map[string]string{"type":"strongMachine"},
+					Labels: map[string]string{labelKey:"strongMachine"},
 				},
 				Spec: v1alpha1.MachineSpec{
 					ProviderConfig: v1alpha1.ProviderConfig{
@@ -261,7 +265,7 @@ func machineFromMachineSet(machineSet *v1alpha1.MachineSet, name string) *v1alph
 	return m
 }
 
-func machineWithPreservedExistingOwnerRefs(machineSet *v1alpha1.MachineSet, name string) *v1alpha1.Machine {
+func machineWithMultipleOwnerRefs(machineSet *v1alpha1.MachineSet, name string) *v1alpha1.Machine {
 	controller := false
 	existingRef := metav1.NewControllerRef(machineSet, controllerKind)
 	existingRef.UID = "NotMe"
@@ -272,7 +276,7 @@ func machineWithPreservedExistingOwnerRefs(machineSet *v1alpha1.MachineSet, name
 	return m
 }
 
-func setDifferentUID(m *v1alpha1.Machine) *v1alpha1.Machine {
+func setDifferentOwnerUID(m *v1alpha1.Machine) *v1alpha1.Machine {
 	m.ObjectMeta.OwnerReferences[0].UID = "NotMe"
 	return m
 }
@@ -285,7 +289,7 @@ func setMachineDeleting(m *v1alpha1.Machine) *v1alpha1.Machine {
 
 func setDifferentLabels(m *v1alpha1.Machine) *v1alpha1.Machine {
 	labels := m.GetLabels()
-	labels["type"] = "NOTME"
+	labels[labelKey] = "NOTME"
 	m.ObjectMeta.SetLabels(labels)
 	return m
 }

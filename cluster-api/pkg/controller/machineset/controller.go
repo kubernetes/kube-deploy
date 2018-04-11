@@ -77,41 +77,15 @@ func (c *MachineSetControllerImpl) Get(namespace, name string) (*v1alpha1.Machin
 
 // syncReplicas essentially scales machine resources up and down.
 func (c *MachineSetControllerImpl) syncReplicas(machineSet *v1alpha1.MachineSet, machines []*v1alpha1.Machine) error {
-	var currentMachineCount int32 = 0
 	// Take ownership of machines if not already owned.
 	for _, machine := range machines {
-		// Do nothing if the machine is being deleted.
-		if !machine.ObjectMeta.DeletionTimestamp.IsZero() {
-			glog.V(2).Infof("Skipping machine (%v), as it is being deleted.", machine.Name)
-			continue
-		}
-
-		// Machine owned by another controller.
-		if metav1.GetControllerOf(machine) != nil && !metav1.IsControlledBy(machine, machineSet) {
-			glog.V(2).Infof("Skipping machine (%v), as it is owned by someone else.", machine.Name)
-			continue
-		}
-
-		currentMachineCount++
-		if metav1.IsControlledBy(machine, machineSet) {
-			continue
-		}
-
-		// Add controller reference.
-		ownerRefs := machine.ObjectMeta.GetOwnerReferences()
-		if ownerRefs == nil {
-			ownerRefs = []metav1.OwnerReference{}
-		}
-
-		newRef := *metav1.NewControllerRef(machineSet, controllerKind)
-		ownerRefs = append(ownerRefs, newRef)
-		machine.ObjectMeta.SetOwnerReferences(ownerRefs)
-		if _, err := c.machineClient.ClusterV1alpha1().Machines(machineSet.Namespace).Update(machine); err != nil {
-			glog.Warningf("Failed to update machine owner reference. %v", err)
+		if shouldAdopt(machineSet, machine) {
+			c.adoptOrphan(machineSet, machine)
 		}
 	}
 
 	var result error
+	currentMachineCount := int32(len(machines))
 	desiredReplicas := *machineSet.Spec.Replicas
 	diff := int(currentMachineCount - desiredReplicas)
 	if diff < 0 {
@@ -174,4 +148,40 @@ func (c *MachineSetControllerImpl) getMachines(machineSet *v1alpha1.MachineSet) 
 		return nil, err
 	}
 	return filteredMachines, err
+}
+
+func shouldAdopt(machineSet *v1alpha1.MachineSet, machine *v1alpha1.Machine) bool {
+	// Do nothing if the machine is being deleted.
+	if !machine.ObjectMeta.DeletionTimestamp.IsZero() {
+		glog.V(2).Infof("Skipping machine (%v), as it is being deleted.", machine.Name)
+		return false
+	}
+
+	// Machine owned by another controller.
+	if metav1.GetControllerOf(machine) != nil && !metav1.IsControlledBy(machine, machineSet) {
+		glog.V(2).Infof("Skipping machine (%v), as it is owned by someone else.", machine.Name)
+		return false
+	}
+
+	// Machine we control.
+	if metav1.IsControlledBy(machine, machineSet) {
+		return false
+	}
+
+	return true
+}
+
+func (c *MachineSetControllerImpl) adoptOrphan(machineSet *v1alpha1.MachineSet, machine *v1alpha1.Machine) {
+	// Add controller reference.
+	ownerRefs := machine.ObjectMeta.GetOwnerReferences()
+	if ownerRefs == nil {
+		ownerRefs = []metav1.OwnerReference{}
+	}
+
+	newRef := *metav1.NewControllerRef(machineSet, controllerKind)
+	ownerRefs = append(ownerRefs, newRef)
+	machine.ObjectMeta.SetOwnerReferences(ownerRefs)
+	if _, err := c.machineClient.ClusterV1alpha1().Machines(machineSet.Namespace).Update(machine); err != nil {
+		glog.Warningf("Failed to update machine owner reference. %v", err)
+	}
 }

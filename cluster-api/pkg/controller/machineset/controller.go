@@ -21,6 +21,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/apiserver-builder/pkg/builders"
 
+	"k8s.io/apimachinery/pkg/labels"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1"
 	machineclientset "k8s.io/kube-deploy/cluster-api/pkg/client/clientset_generated/clientset"
@@ -77,22 +78,43 @@ func (c *MachineSetControllerImpl) Get(namespace, name string) (*v1alpha1.Machin
 
 // syncReplicas essentially scales machine resources up and down.
 func (c *MachineSetControllerImpl) syncReplicas(machineSet *v1alpha1.MachineSet, machines []*v1alpha1.Machine) error {
-	var result error
-	currentMachineCount := int32(len(machines))
-	desiredReplicas := *machineSet.Spec.Replicas
-	diff := int(currentMachineCount - desiredReplicas)
-
+	var currentMachineCount int32 = 0
 	// Take ownership of machines if not already owned.
 	for _, machine := range machines {
-		if !metav1.IsControlledBy(machine, machineSet) {
-			glog.Infof("MachineSet (%v) does not own machine (%v).", machineSet.Name, machine.Name)
-			machine.ObjectMeta.OwnerReferences = []metav1.OwnerReference{*metav1.NewControllerRef(machineSet, controllerKind),}
-			if _, err := c.machineClient.ClusterV1alpha1().Machines(machineSet.Namespace).Update(machine); err != nil {
-				glog.Warningf("Failed to update machine owner reference. %v", err)
-			}
+		// Do nothing if the machine is being deleted.
+		if !machine.ObjectMeta.DeletionTimestamp.IsZero() {
+			glog.V(2).Infof("Skipping machine (%v), as it is being deleted.", machine.Name)
+			continue
+		}
+
+		// Machine owned by another controller.
+		if metav1.GetControllerOf(machine) != nil && !metav1.IsControlledBy(machine, machineSet) {
+			glog.V(2).Infof("Skipping machine (%v), as it is owned by someone else.", machine.Name)
+			continue
+		}
+
+		currentMachineCount++
+		if metav1.IsControlledBy(machine, machineSet) {
+			continue
+		}
+
+		// Add controller reference.
+		ownerRefs := machine.ObjectMeta.GetOwnerReferences()
+		if ownerRefs == nil {
+			ownerRefs = []metav1.OwnerReference{}
+		}
+
+		newRef := *metav1.NewControllerRef(machineSet, controllerKind)
+		ownerRefs = append(ownerRefs, newRef)
+		machine.ObjectMeta.SetOwnerReferences(ownerRefs)
+		if _, err := c.machineClient.ClusterV1alpha1().Machines(machineSet.Namespace).Update(machine); err != nil {
+			glog.Warningf("Failed to update machine owner reference. %v", err)
 		}
 	}
 
+	var result error
+	desiredReplicas := *machineSet.Spec.Replicas
+	diff := int(currentMachineCount - desiredReplicas)
 	if diff < 0 {
 		diff *= -1
 		for i := 0; i < diff; i++ {

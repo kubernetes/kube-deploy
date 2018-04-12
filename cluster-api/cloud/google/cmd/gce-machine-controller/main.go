@@ -32,7 +32,7 @@ import (
 
 var (
 	kubeadmToken            = pflag.String("token", "", "Kubeadm token to use to join new machines")
-	machineSetupConfigsPath = pflag.String("config", "", "path to machine setup configs file")
+	machineSetupConfigsPath = pflag.String("machinesetup", "", "path to machine setup configs file")
 )
 
 func init() {

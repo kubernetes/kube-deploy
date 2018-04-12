@@ -149,7 +149,7 @@ spec:
         args:
         - --kubeconfig=/etc/kubernetes/admin.conf
         - --token={{ .Token }}
-        - --config=/etc/machinesetup/machine_setup_configs.yaml
+        - --machinesetup=/etc/machinesetup/machine_setup_configs.yaml
         resources:
           requests:
             cpu: 100m

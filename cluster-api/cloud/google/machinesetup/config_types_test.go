@@ -180,31 +180,38 @@ func TestGetYaml(t *testing.T) {
 	}
 }
 
+func validConfigs(configs ...config) ValidConfigs {
+	return ValidConfigs{
+		configList: &configList{
+			Items: configs,
+		},
+	}
+}
+
 func TestMatchMachineSetupConfig(t *testing.T) {
+	dockerRuntimeInfo := clusterv1.ContainerRuntimeInfo{
+		Name:    "docker",
+		Version: "1.12.0",
+	}
+
 	masterMachineSetupConfig := config{
 		Params: []ConfigParams{
 			{
 				OS:    "ubuntu-1710",
 				Roles: []clustercommon.MachineRole{clustercommon.MasterRole},
 				Versions: clusterv1.MachineVersionInfo{
-					Kubelet:      "1.9.3",
-					ControlPlane: "1.9.3",
-					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
-						Name:    "docker",
-						Version: "1.12.0",
-					},
+					Kubelet:          "1.9.3",
+					ControlPlane:     "1.9.3",
+					ContainerRuntime: dockerRuntimeInfo,
 				},
 			},
 			{
 				OS:    "ubuntu-1710",
 				Roles: []clustercommon.MachineRole{clustercommon.MasterRole},
 				Versions: clusterv1.MachineVersionInfo{
-					Kubelet:      "1.9.4",
-					ControlPlane: "1.9.4",
-					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
-						Name:    "docker",
-						Version: "1.12.0",
-					},
+					Kubelet:          "1.9.4",
+					ControlPlane:     "1.9.4",
+					ContainerRuntime: dockerRuntimeInfo,
 				},
 			},
 		},
@@ -219,22 +226,16 @@ func TestMatchMachineSetupConfig(t *testing.T) {
 				OS:    "ubuntu-1710",
 				Roles: []clustercommon.MachineRole{clustercommon.NodeRole},
 				Versions: clusterv1.MachineVersionInfo{
-					Kubelet: "1.9.3",
-					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
-						Name:    "docker",
-						Version: "1.12.0",
-					},
+					Kubelet:          "1.9.3",
+					ContainerRuntime: dockerRuntimeInfo,
 				},
 			},
 			{
 				OS:    "ubuntu-1710",
 				Roles: []clustercommon.MachineRole{clustercommon.NodeRole},
 				Versions: clusterv1.MachineVersionInfo{
-					Kubelet: "1.9.4",
-					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
-						Name:    "docker",
-						Version: "1.12.0",
-					},
+					Kubelet:          "1.9.4",
+					ContainerRuntime: dockerRuntimeInfo,
 				},
 			},
 		},
@@ -249,12 +250,9 @@ func TestMatchMachineSetupConfig(t *testing.T) {
 				OS:    "ubuntu-1710",
 				Roles: []clustercommon.MachineRole{clustercommon.MasterRole, clustercommon.NodeRole},
 				Versions: clusterv1.MachineVersionInfo{
-					Kubelet:      "1.9.5",
-					ControlPlane: "1.9.5",
-					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
-						Name:    "docker",
-						Version: "1.12.0",
-					},
+					Kubelet:          "1.9.5",
+					ControlPlane:     "1.9.5",
+					ContainerRuntime: dockerRuntimeInfo,
 				},
 			},
 		},
@@ -263,66 +261,96 @@ func TestMatchMachineSetupConfig(t *testing.T) {
 			StartupScript: "Multi-role startup script",
 		},
 	}
-
-	validConfigs := ValidConfigs{
-		configList: &configList{
-			Items: []config{masterMachineSetupConfig, nodeMachineSetupConfig, multiRoleSetupConfig},
+	duplicateMasterMachineSetupConfig := config{
+		Params: []ConfigParams{
+			{
+				OS:    "ubuntu-1710",
+				Roles: []clustercommon.MachineRole{clustercommon.MasterRole},
+				Versions: clusterv1.MachineVersionInfo{
+					Kubelet:          "1.9.3",
+					ControlPlane:     "1.9.3",
+					ContainerRuntime: dockerRuntimeInfo,
+				},
+			},
+			{
+				OS:    "ubuntu-1710",
+				Roles: []clustercommon.MachineRole{clustercommon.MasterRole},
+				Versions: clusterv1.MachineVersionInfo{
+					Kubelet:          "1.9.4",
+					ControlPlane:     "1.9.4",
+					ContainerRuntime: dockerRuntimeInfo,
+				},
+			},
+		},
+		Image: "projects/ubuntu-os-cloud/global/images/family/ubuntu-1710",
+		Metadata: Metadata{
+			StartupScript: "Duplicate master startup script",
 		},
 	}
 
 	testTables := []struct {
+		validConfigs  ValidConfigs
 		params        ConfigParams
 		expectedMatch *config
 		expectedErr   bool
 	}{
 		{
+			validConfigs: validConfigs(masterMachineSetupConfig, nodeMachineSetupConfig, multiRoleSetupConfig),
 			params: ConfigParams{
 				OS:    "ubuntu-1710",
 				Roles: []clustercommon.MachineRole{clustercommon.MasterRole},
 				Versions: clusterv1.MachineVersionInfo{
-					Kubelet:      "1.9.4",
-					ControlPlane: "1.9.4",
-					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
-						Name:    "docker",
-						Version: "1.12.0",
-					},
+					Kubelet:          "1.9.4",
+					ControlPlane:     "1.9.4",
+					ContainerRuntime: dockerRuntimeInfo,
 				},
 			},
 			expectedMatch: &masterMachineSetupConfig,
 			expectedErr:   false,
 		},
 		{
+			validConfigs: validConfigs(masterMachineSetupConfig, nodeMachineSetupConfig, multiRoleSetupConfig),
 			params: ConfigParams{
 				OS:    "ubuntu-1710",
 				Roles: []clustercommon.MachineRole{clustercommon.NodeRole},
 				Versions: clusterv1.MachineVersionInfo{
-					Kubelet: "1.9.4",
-					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
-						Name:    "docker",
-						Version: "1.12.0",
-					},
+					Kubelet:          "1.9.4",
+					ContainerRuntime: dockerRuntimeInfo,
 				},
 			},
 			expectedMatch: &nodeMachineSetupConfig,
 			expectedErr:   false,
 		},
 		{
+			validConfigs: validConfigs(masterMachineSetupConfig, nodeMachineSetupConfig, multiRoleSetupConfig),
+			params: ConfigParams{
+				OS:    "ubuntu-1710",
+				Roles: []clustercommon.MachineRole{clustercommon.MasterRole, clustercommon.NodeRole},
+				Versions: clusterv1.MachineVersionInfo{
+					Kubelet:          "1.9.5",
+					ControlPlane:     "1.9.5",
+					ContainerRuntime: dockerRuntimeInfo,
+				},
+			},
+			expectedMatch: &multiRoleSetupConfig,
+			expectedErr:   false,
+		},
+		{
+			validConfigs: validConfigs(masterMachineSetupConfig, nodeMachineSetupConfig, multiRoleSetupConfig),
 			params: ConfigParams{
 				OS:    "ubuntu-1710",
 				Roles: []clustercommon.MachineRole{clustercommon.MasterRole},
 				Versions: clusterv1.MachineVersionInfo{
-					Kubelet:      "1.9.5",
-					ControlPlane: "1.9.5",
-					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
-						Name:    "docker",
-						Version: "1.12.0",
-					},
+					Kubelet:          "1.9.5",
+					ControlPlane:     "1.9.5",
+					ContainerRuntime: dockerRuntimeInfo,
 				},
 			},
 			expectedMatch: nil,
 			expectedErr:   true,
 		},
 		{
+			validConfigs: validConfigs(masterMachineSetupConfig, nodeMachineSetupConfig, multiRoleSetupConfig),
 			params: ConfigParams{
 				OS:    "ubuntu-1710",
 				Roles: []clustercommon.MachineRole{clustercommon.NodeRole},
@@ -338,31 +366,41 @@ func TestMatchMachineSetupConfig(t *testing.T) {
 			expectedErr:   true,
 		},
 		{
+			validConfigs: validConfigs(masterMachineSetupConfig, nodeMachineSetupConfig, multiRoleSetupConfig),
 			params: ConfigParams{
 				OS:    "ubuntu-1710",
 				Roles: []clustercommon.MachineRole{clustercommon.MasterRole, clustercommon.NodeRole},
 				Versions: clusterv1.MachineVersionInfo{
-					Kubelet: "1.9.3",
-					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
-						Name:    "docker",
-						Version: "1.12.0",
-					},
+					Kubelet:          "1.9.3",
+					ContainerRuntime: dockerRuntimeInfo,
 				},
 			},
 			expectedMatch: nil,
 			expectedErr:   true,
 		},
 		{
+			validConfigs: validConfigs(masterMachineSetupConfig, nodeMachineSetupConfig, multiRoleSetupConfig),
 			params: ConfigParams{
 				OS:    "ubuntu-1710",
 				Roles: []clustercommon.MachineRole{clustercommon.MasterRole, clustercommon.MasterRole},
 				Versions: clusterv1.MachineVersionInfo{
-					Kubelet:      "1.9.5",
-					ControlPlane: "1.9.5",
-					ContainerRuntime: clusterv1.ContainerRuntimeInfo{
-						Name:    "docker",
-						Version: "1.12.0",
-					},
+					Kubelet:          "1.9.5",
+					ControlPlane:     "1.9.5",
+					ContainerRuntime: dockerRuntimeInfo,
+				},
+			},
+			expectedMatch: nil,
+			expectedErr:   true,
+		},
+		{
+			validConfigs: validConfigs(masterMachineSetupConfig, nodeMachineSetupConfig, multiRoleSetupConfig, duplicateMasterMachineSetupConfig),
+			params: ConfigParams{
+				OS:    "ubuntu-1710",
+				Roles: []clustercommon.MachineRole{clustercommon.MasterRole},
+				Versions: clusterv1.MachineVersionInfo{
+					Kubelet:          "1.9.4",
+					ControlPlane:     "1.9.4",
+					ContainerRuntime: dockerRuntimeInfo,
 				},
 			},
 			expectedMatch: nil,
@@ -371,7 +409,7 @@ func TestMatchMachineSetupConfig(t *testing.T) {
 	}
 
 	for _, table := range testTables {
-		matched, err := validConfigs.matchMachineSetupConfig(&table.params)
+		matched, err := table.validConfigs.matchMachineSetupConfig(&table.params)
 		if !reflect.DeepEqual(matched, table.expectedMatch) {
 			t.Errorf("Matched machine setup config was incorrect, got: %+v,\n want %+v.", matched, table.expectedMatch)
 		}

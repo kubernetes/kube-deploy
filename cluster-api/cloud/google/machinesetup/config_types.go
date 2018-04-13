@@ -121,6 +121,7 @@ func (vc *ValidConfigs) GetMetadata(params *ConfigParams) (Metadata, error) {
 }
 
 func (vc *ValidConfigs) matchMachineSetupConfig(params *ConfigParams) (*config, error) {
+	matchingConfigs := make([]config, 0)
 	for _, conf := range vc.configList.Items {
 		for _, validParams := range conf.Params {
 			if params.OS != validParams.OS {
@@ -134,10 +135,17 @@ func (vc *ValidConfigs) matchMachineSetupConfig(params *ConfigParams) (*config, 
 			if params.Versions != validParams.Versions {
 				continue
 			}
-			return &conf, nil
+			matchingConfigs = append(matchingConfigs, conf)
 		}
 	}
-	return nil, fmt.Errorf("could not find a matching machine setup config for params %+v", params)
+
+	if len(matchingConfigs) == 1 {
+		return &matchingConfigs[0], nil
+	} else if len(matchingConfigs) == 0 {
+		return nil, fmt.Errorf("could not find a matching machine setup config for params %+v", params)
+	} else {
+		return nil, fmt.Errorf("found multiple matching machine setup configs for params %+v", params)
+	}
 }
 
 func rolesToMap(roles []clustercommon.MachineRole) map[clustercommon.MachineRole]int {

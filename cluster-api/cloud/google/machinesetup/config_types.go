@@ -29,10 +29,12 @@ import (
 	clusterv1 "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
+// Config Watch holds the path to the machine setup configs yaml file.
 type ConfigWatch struct {
 	path string
 }
 
+// The valid machine setup configs parsed out of the machine setup configs yaml file held in ConfigWatch.
 type ValidConfigs struct {
 	configList *configList
 }
@@ -41,12 +43,15 @@ type configList struct {
 	Items []config `json:"items"`
 }
 
+// A single valid machine setup config that maps a machine's params to the corresponding image and metadata.
 type config struct {
 	// A list of the valid combinations of ConfigParams that will
 	// map to the given Image and Metadata.
 	Params []ConfigParams `json:"machineParams"`
 
-	// The fully specified image path.
+	// The fully specified image path. e.g.
+	//   projects/ubuntu-os-cloud/global/images/family/ubuntu-1604-lts
+	//   projects/ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20180405
 	Image    string   `json:"image"`
 	Metadata Metadata `json:"metadata"`
 }

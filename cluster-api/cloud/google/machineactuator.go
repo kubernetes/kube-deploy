@@ -57,6 +57,8 @@ const (
 	UIDLabelKey       = "machine-crd-uid"
 	BootstrapLabelKey = "boostrap"
 
+	// This file is a yaml that will be used to create the machine-setup configmap on the machine controller.
+	// It contains the supported machine configurations along with the startup scripts and OS image paths that correspond to each supported configuration.
 	MachineSetupConfigsFilename = "machine_setup_configs.yaml"
 )
 

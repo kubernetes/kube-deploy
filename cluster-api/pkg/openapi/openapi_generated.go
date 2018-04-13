@@ -23577,16 +23577,15 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"providerConfig": {
 							SchemaProps: spec.SchemaProps{
 								Description: "Provider-specific serialized configuration to use during cluster creation. It is recommended that providers maintain their own versioned API types that should be serialized/deserialized from this field.",
-								Type:        []string{"string"},
-								Format:      "",
+								Ref:         ref("k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.ProviderConfig"),
 							},
 						},
 					},
-					Required: []string{"clusterNetwork", "providerConfig"},
+					Required: []string{"clusterNetwork"},
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.ClusterNetworkingConfig"},
+				"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.ClusterNetworkingConfig", "k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.ProviderConfig"},
 		},
 		"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.ClusterStatus": {
 			Schema: spec.Schema{
@@ -24533,7 +24532,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 					Properties: map[string]spec.Schema{
 						"value": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Value is an inlined, serialized representation of the node configuration. It is recommended that providers maintain their own versioned API types that should be serialized/deserialized from this field, akin to component config.",
+								Description: "Value is an inlined, serialized representation of the resource configuration. It is recommended that providers maintain their own versioned API types that should be serialized/deserialized from this field, akin to component config.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
@@ -24552,7 +24551,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/kube-deploy/cluster-api/pkg/apis/cluster/v1alpha1.ProviderConfigSource": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "ProviderConfigSource represents a source for the provider-specific node configuration.",
+					Description: "ProviderConfigSource represents a source for the provider-specific resource configuration.",
 					Properties:  map[string]spec.Schema{},
 				},
 			},

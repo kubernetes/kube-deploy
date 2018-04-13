@@ -1,0 +1,26 @@
+# Copyright 2018 The Kubernetes Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+FROM golang:1.10-alpine
+
+WORKDIR /go/src/k8s.io/kube-deploy/cluster-api
+ENV APISERVER_BUILDER_VER v1.9-alpha.3
+ARG DEVUSERNAME
+ARG DEVUSERID
+
+RUN apk update && apk add --update openssl ca-certificates
+RUN mkdir -p /opt/apiserver-builder/
+RUN wget -O /tmp/apiserver-builder.tgz https://github.com/kubernetes-incubator/apiserver-builder/releases/download/${APISERVER_BUILDER_VER}/apiserver-builder-${APISERVER_BUILDER_VER}-linux-amd64.tar.gz
+RUN cd /opt/apiserver-builder/ && tar xzf /tmp/apiserver-builder.tgz
+RUN adduser -u ${DEVUSERID} -D ${DEVUSERNAME}

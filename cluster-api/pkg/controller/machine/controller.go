@@ -48,6 +48,7 @@ type MachineControllerImpl struct {
 	clientSet           clientset.Interface
 	machineClient       v1alpha1.MachineInterface
 	linkedNodes         map[string]bool
+	syncChans           map[string]chan string
 }
 
 // Init initializes the controller and is called by the generated code
@@ -64,6 +65,7 @@ func (c *MachineControllerImpl) Init(arguments sharedinformers.ControllerInitArg
 	c.kubernetesClientSet = arguments.GetSharedInformers().KubernetesClientSet
 
 	c.linkedNodes = make(map[string]bool)
+	c.syncChans = make(map[string]chan string)
 
 	// Create machine actuator.
 	// TODO: Assume default namespace for now. Maybe a separate a controller per namespace?

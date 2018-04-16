@@ -1,0 +1,111 @@
+25-Sep-2017 CONFIG-TRANSPILER v0.5.0
+
+  Changes
+
+    - Support Ignition spec 2.1.0
+
+  Features
+
+    - Common partition type GUIDs can be specified via aliases
+
+  Fixes
+
+    - Fix regression in validation logic causing inaccurate line and column
+      reporting
+    - Fix issue where locksmith fields would generate double quoted strings
+      in /etc/coreos/update.conf
+
+08-Aug-2017 CONFIG-TRANSPILER v0.4.2
+
+  Fixes
+
+    - Emit an error when an unsupported platform is used
+    - Always emit an empty create object for non-core users to ensure Ignition
+      creates them
+
+14-Jul-2017 CONFIG-TRANSPILER v0.4.1
+
+  Fixes
+
+    - Fixed the build process to properly set version number
+
+12-Jul-2017 CONFIG-TRANSPILER v0.4.0
+
+  Features
+
+    - Added support for vagrant-virtualbox provider
+    - Added 'network_config' section for flannel
+    - Added new etcd-v3.2 flags
+
+  Fixes
+
+    - Handle omitted versions for flannel correctly
+    - Fixed envvar name LOCKSMITHD_ENDPOINT
+
+04-May-2017 CONFIG-TRANSPILER v0.3.1
+
+  Features
+
+    - Added 'enable-pprof' flag in etcd
+
+  Fixes
+
+    - Non-string values in the etcd and flannel sections are now formatted
+      correctly
+    - On GCE the PUBLIC_IPV4 and PRIVATE_IPV4 dynamic data fields produced the
+      incorrect environment variable names, this has been fixed
+
+20-Apr-2017 CONFIG-TRANSPILER v0.3.0
+
+  Features
+    
+    - The locksmith section gained many more fields for configuration, including
+      reboot windows and etcd configuration
+  
+  Fixes
+
+    - The openstack-metadata provider will now override the platform in
+      coreos-metadata to set the platform to use the metadata service. This is
+      necessary for the coreos-metadata unit to run successfully.
+
+03-Apr-2017 CONFIG-TRANSPILER v0.2.2
+
+  Features
+    
+    - Version field no longer required for etcd and flannel sections
+
+28-Mar-2017 CONFIG-TRANSPILER v0.2.1
+
+  Features
+
+    - Added platform support for openstack-metadata
+
+  Fixes
+
+    - reboot-strategy under the locksmith section renamed to reboot_strategy to
+      be consistent with the rest of the schema
+
+20-Mar-2017 CONFIG-TRANSPILER v0.2.0
+
+  Features
+
+    - New etcd and flannel sections have been added, allowing for easy
+      configuration of the service.
+    - New -strict flag, that causes warnings to be treated as errors
+    - New update section added, for easy selection of the OS update group and
+      server
+    - Dynamic data support added, allowing things like the machine's ipv4
+      address to be referenced in the etcd and flannel sections
+    - New docker section added, for easy configuration of flags on the docker
+      daemon
+    - New locksmith section added for configuring of reboot strategy
+
+  Fixes
+
+    - -in-file and -out-file flags were broken
+
+29-Dec-2016 CONFIG-TRANSPILER v0.1.0
+
+  Features
+
+    - Support for Ignition spec v2.0.0

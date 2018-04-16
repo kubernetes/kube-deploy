@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -eu
+
+ORG_PATH="github.com/coreos"
+REPO_PATH="${ORG_PATH}/container-linux-config-transpiler"
+
+if [ ! -h gopath/src/${REPO_PATH} ]; then
+	mkdir -p gopath/src/${ORG_PATH}
+	ln -s ../../../.. gopath/src/${REPO_PATH} || exit 255
+fi
+
+export GOPATH=${PWD}/gopath
+
+SRC=$(find . -name '*.go' \
+	-not -path "./vendor/*")
+
+PKGS=$(cd gopath/src/${REPO_PATH}; go list ./... | \
+	grep --invert-match /vendor)
+FORMATTABLE=$(cd gopath/src/${REPO_PATH}; ls -d */ | \
+	grep --invert-match --extended-regexp '(vendor/)')
+
+echo "Checking gofix..."
+go tool fix -diff $SRC
+
+echo "Checking gofmt..."
+fmtRes=$(gofmt -l $FORMATTABLE)
+if [ -n "${fmtRes}" ]; then
+  echo -e "gofmt checking failed:\n${fmtRes}"
+  exit 2
+fi
+
+echo "Checking govet..."
+go vet $PKGS
+
+echo "Running tests..."
+go test $PKGS -cover
+
+echo "Checking documentation..."
+go run internal/util/tools/docs.go
+
+echo "Success"

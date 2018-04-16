@@ -1,0 +1,3 @@
+FROM scratch
+COPY /usr/bin/ct /ct
+ENTRYPOINT ["/ct"]

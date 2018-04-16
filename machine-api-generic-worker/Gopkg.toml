@@ -1,0 +1,49 @@
+required = ["k8s.io/code-generator/cmd/client-gen"]
+
+[[constraint]]
+  name = "github.com/golang/glog"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/Masterminds/sprig"
+  version = "v2.14.1"
+
+[[constraint]]
+  name = "github.com/coreos/container-linux-config-transpiler"
+  version = "v0.5.0"
+
+[[override]]
+  name = "github.com/ajeddeloh/yaml"
+  revision = "6b94386aeefd8c4b8470aee72bfca084c2f91da9"
+
+[[constraint]]
+  name = "k8s.io/apimachinery"
+  branch = "release-1.9"
+
+[[constraint]]
+  name = "k8s.io/client-go"
+  branch = "release-6.0"
+
+[[constraint]]
+  name = "k8s.io/code-generator"
+  branch = "release-1.9"
+
+[[override]]
+  name = "k8s.io/gengo"
+  revision = "b58fc7edb82e0c6ffc9b8aef61813c7261b785d4"
+
+[[constraint]]
+  name = "github.com/digitalocean/godo"
+  version = "v1.1.1"
+
+[[constraint]]
+  name = "k8s.io/apiextensions-apiserver"
+  branch = "release-1.9"
+
+[[constraint]]
+  name = "github.com/aws/aws-sdk-go"
+  version = "1.12.53"
+
+[[constraint]]
+  name = "github.com/gophercloud/gophercloud"
+  branch = "master"

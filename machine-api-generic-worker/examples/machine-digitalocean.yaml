@@ -1,0 +1,31 @@
+apiVersion: "machine.k8s.io/v1alpha1"
+kind: Machine
+metadata:
+  name: machine1
+spec:
+  metadata:
+    name: node1
+  providerConfig:
+    sshPublicKeys:
+      - "<< YOUR_PUBLIC_KEY >>"
+    cloudProvider: "digitalocean"
+    cloudProviderSpec:
+      token: "<< YOUR_DO_TOKEN >>"
+      region: "fra1"
+      size: "2gb"
+      backups: false
+      ipv6: false
+      private_networking: true
+      monitoring: true
+      tags:
+        - "machine-controller"
+    operatingSystem: "coreos"
+    operatingSystemSpec:
+      disableAutoUpdate: true
+  roles:
+  - "Node"
+  versions:
+    kubelet: "v1.8.5_coreos.0" # Kubelet wrapper image tag
+    containerRuntime:
+      name: "docker" # Not implemented atm - currently: coreos default docker
+      version: "1.13" # Not implemented atm - currently: coreos default docker

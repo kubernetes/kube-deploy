@@ -1,0 +1,38 @@
+apiVersion: "machine.k8s.io/v1alpha1"
+kind: Machine
+metadata:
+  name: machine1
+spec:
+  metadata:
+    name: node1
+    labels:
+      foo: "bar"
+  providerConfig:
+    sshPublicKeys:
+      - "<< YOUR_PUBLIC_KEY >>"
+    cloudProvider: "openstack"
+    cloudProviderSpec:
+      identityEndpoint: "<< YOUR_OS_AUTH_URL >>"
+      username: "<< YOUR_OS_USERNAME >>"
+      password: "<< YOUR_OS_PASSWORD >>"
+      domainName: "<< YOUR_OS_DOMAIN >>"
+      tenantName: "<< YOUR_OS_TENANT >>"
+      image: "Ubuntu 16.04 amd64"
+      flavor: "m1.small"
+      securityGroups:
+        - "external-ssh"
+      subnet: "subnet"
+      floatingIpPool: "ext-net"
+      availabilityZone: "<< YOUR_OS_AZ >>"
+      region: "<< YOUR_OS_REGION >>"
+      network: "network"
+    operatingSystem: "ubuntu"
+    operatingSystemSpec:
+      distUpgradeOnBoot: true
+  roles:
+  - "Node"
+  versions:
+    kubelet: "v1.8.5" # Kubelet wrapper image tag
+    containerRuntime:
+      name: "docker" # Not implemented atm - currently: coreos default docker
+      version: "1.13" # Not implemented atm - currently: coreos default docker

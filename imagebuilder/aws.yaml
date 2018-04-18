@@ -1,5 +1,5 @@
 Cloud: aws
-TemplatePath: templates/1.8.yml
+TemplatePath: templates/1.8-jessie.yml
 Tags:
   k8s.io/kernel: "4.4"
   k8s.io/version: "1.8"

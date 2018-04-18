@@ -151,6 +151,7 @@ func (gce *GCEClient) CreateMachineController(cluster *clusterv1.Cluster, initia
 	}
 
 	// Create the configmap so the machine setup configs can be mounted into the node.
+	// TODO: create the configmap during bootstrapping instead of being buried in the machine actuator code.
 	machineSetupConfigs, err := gce.configWatch.ValidConfigs()
 	if err != nil {
 		return err

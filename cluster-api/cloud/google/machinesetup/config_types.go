@@ -30,6 +30,7 @@ import (
 )
 
 // Config Watch holds the path to the machine setup configs yaml file.
+// This works directly with a yaml file is used instead of a ConfigMap object so that we don't take a dependency on the API Server.
 type ConfigWatch struct {
 	path string
 }

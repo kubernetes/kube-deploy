@@ -8,7 +8,7 @@ Please also see the README in templates for documentation as to the motivation f
 It is a wrapper around bootstrap-vz (the tool used to build official Debian cloud images).  
 It adds functionality to spin up an instance for building the image, and publishing the image to all regions.
 
-Imagebuilder create an instance to build the image, builds the image as specified by `TemplatePath`, makes the
+Imagebuilder creates an instance to build the image, builds the image as specified by `TemplatePath`, makes the
 image public and copies it to all accessible regions (on AWS), and then shuts down the builder instance.
 Each of these stages can be controlled through flags
 (for example, you might not want use `--publish=false` for an internal image.)

@@ -51,7 +51,7 @@ Create a firewall rule to allow communication from kubectl (and nodes) to the co
 ### Install Docker
 
 1. Install [Docker](https://docs.docker.com/install/) on your machine;
-2. Make sure your user can execute docker commmands (without sudo). This is a way to test it:
+2. Make sure your user can execute docker commands (without sudo). This is a way to test it:
 ```bash
 $ docker run hello-world
 

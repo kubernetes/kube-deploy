@@ -34,7 +34,7 @@ performed in-place or via Node replacement.
 This proposal introduces a new API type: Machine. See the full definition in
 [types.go](types.go).
 
-A "Machine" is the declarative spec for a Node, as represented in Kuberenetes
+A "Machine" is the declarative spec for a Node, as represented in Kubernetes
 core. If a new Machine object is created, a provider-specific controller will
 handle provisioning and installing a new host to register as a new Node matching
 the Machine spec. If the Machine's spec is updated, a provider-specific

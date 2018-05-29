@@ -497,15 +497,6 @@
 
 [[projects]]
   branch = "master"
-  name = "golang.org/x/tools"
-  packages = [
-    "go/ast/astutil",
-    "imports"
-  ]
-  revision = "ac136b6c2db7c4d43955e4bc7174db36dc0539c0"
-
-[[projects]]
-  branch = "master"
   name = "google.golang.org/api"
   packages = [
     "compute/v1",
@@ -916,25 +907,45 @@
   revision = "90539b4e75a8daaf7f67c3874c6180bfb1a63936"
 
 [[projects]]
-  name = "k8s.io/code-generator"
-  packages = [
-    "cmd/conversion-gen",
-    "cmd/conversion-gen/generators"
-  ]
-  revision = "91d3f6a57905178524105a085085901bb73bd3dc"
-  version = "kubernetes-1.9.1"
-
-[[projects]]
   branch = "master"
-  name = "k8s.io/gengo"
+  name = "k8s.io/kube-deploy"
   packages = [
-    "args",
-    "generator",
-    "namer",
-    "parser",
-    "types"
+    "cluster-api/cloud/google",
+    "cluster-api/cloud/google/config",
+    "cluster-api/cloud/google/gceproviderconfig",
+    "cluster-api/cloud/google/gceproviderconfig/v1alpha1",
+    "cluster-api/errors",
+    "cluster-api/gcp-deployer/cmd",
+    "cluster-api/gcp-deployer/deploy",
+    "cluster-api/pkg/apis",
+    "cluster-api/pkg/apis/cluster",
+    "cluster-api/pkg/apis/cluster/common",
+    "cluster-api/pkg/apis/cluster/v1alpha1",
+    "cluster-api/pkg/apis/cluster/v1alpha1/testutil",
+    "cluster-api/pkg/client/clientset_generated/clientset",
+    "cluster-api/pkg/client/clientset_generated/clientset/fake",
+    "cluster-api/pkg/client/clientset_generated/clientset/scheme",
+    "cluster-api/pkg/client/clientset_generated/clientset/typed/cluster/v1alpha1",
+    "cluster-api/pkg/client/clientset_generated/clientset/typed/cluster/v1alpha1/fake",
+    "cluster-api/pkg/client/informers_generated/externalversions",
+    "cluster-api/pkg/client/informers_generated/externalversions/cluster",
+    "cluster-api/pkg/client/informers_generated/externalversions/cluster/v1alpha1",
+    "cluster-api/pkg/client/informers_generated/externalversions/internalinterfaces",
+    "cluster-api/pkg/client/listers_generated/cluster/v1alpha1",
+    "cluster-api/pkg/controller",
+    "cluster-api/pkg/controller/cluster",
+    "cluster-api/pkg/controller/config",
+    "cluster-api/pkg/controller/machine",
+    "cluster-api/pkg/controller/machineset",
+    "cluster-api/pkg/controller/sharedinformers",
+    "cluster-api/pkg/openapi",
+    "cluster-api/tools/repair/cmd",
+    "cluster-api/tools/repair/util",
+    "cluster-api/tools/upgrader/cmd",
+    "cluster-api/tools/upgrader/util",
+    "cluster-api/util"
   ]
-  revision = "01a732e01d00cb9a81bb0ca050d3e6d2b947927b"
+  revision = "15d6c662adcb28a2a81bafa4e5f3b093194025a4"
 
 [[projects]]
   branch = "master"
@@ -951,6 +962,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cd83d550d0ee64c0847a31ab37fce90f980e5762b76ee5a9963959b0dd020eed"
+  inputs-digest = "46fefdcea0ed34bf7b3270da99e881330b3f14e77122c5e93a70d588b17a71e7"
   solver-name = "gps-cdcl"
   solver-version = 1

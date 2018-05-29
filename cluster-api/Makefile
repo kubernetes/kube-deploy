@@ -12,14 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: genapi genconversion
+.PHONY: genapi clean
 
-all: genapi genconversion
+APIBUILDER_GENERATORS=apiregister conversion openapi
+APIBUILDER_IMAGE_TAG=dev-cluster-api-generator
 
+all: genapi clean
+
+# Use apiserver-builder to automatically enerate API code
+# This will:
+# - Build a Docker image with the appropriate apiserver-builder version
+# - Add the current host user as a user in the container so that the code
+#   may be bind mounted with the correct permissions
+# - Execute the apiserver-builder generation process
+# - Clean up the build and tagged dev-cluster-api-generator Docker image
 genapi:
-	go install github.com/kubernetes-incubator/apiserver-builder/cmd/apiregister-gen
-	apiregister-gen -i ./pkg/apis,./pkg/apis/cluster/v1alpha1
+	docker build --build-arg DEVUSERNAME=`id -un` --build-arg DEVUSERID=`id -u` -f Dockerfile.apigen . -t ${APIBUILDER_IMAGE_TAG}
+	for generator in ${APIBUILDER_GENERATORS}; do \
+		docker run --rm --user=`id -un` -v ${PWD}:/go/src/k8s.io/kube-deploy/cluster-api ${APIBUILDER_IMAGE_TAG} /opt/apiserver-builder/bin/apiserver-boot build generated --generator $$generator; \
+	done;
 
-genconversion:
-	go install k8s.io/code-generator/cmd/conversion-gen
-	conversion-gen -i ./pkg/apis/cluster/v1alpha1/ -O zz_generated.conversion
+clean:
+	-docker ps -a -q --filter ancestor=${APIBUILDER_IMAGE_TAG} --format="{{.ID}}" | xargs -r docker stop | xargs -r docker rm
+	-docker rmi ${APIBUILDER_IMAGE_TAG}

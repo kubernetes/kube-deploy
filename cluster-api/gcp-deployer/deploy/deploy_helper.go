@@ -210,7 +210,7 @@ func (d *deployer) copyKubeConfig(master *clusterv1.Machine) error {
 		glog.Infof("Waiting for Kubernetes to come up...")
 		config, err := d.machineDeployer.GetKubeConfig(master)
 		if err != nil {
-			glog.Errorf("Error while retriving kubeconfig %s", err)
+			glog.Errorf("Error while retrieving kubeconfig %s", err)
 			return false, err
 		}
 		if config == "" {

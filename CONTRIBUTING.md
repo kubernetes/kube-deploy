@@ -20,7 +20,7 @@ All changes must be code reviewed. Coding conventions and standards are explaine
 
 ### Merge Approval
 
-Kube-deloy maintainers may add "LGTM" (Looks Good To Me) or an equivalent comment to indicate that a PR is acceptable. Any change requires at least one LGTM.  No pull requests can be merged until at least one maintainer signs off with an LGTM.
+Kube-deploy maintainers may add "LGTM" (Looks Good To Me) or an equivalent comment to indicate that a PR is acceptable. Any change requires at least one LGTM.  No pull requests can be merged until at least one maintainer signs off with an LGTM.
 
 ## Support Channels
 

@@ -58,6 +58,7 @@ var flagTag = flag.Bool("tag", true, "Set to tag image")
 var flagPublish = flag.Bool("publish", true, "Set to publish image")
 var flagReplicate = flag.Bool("replicate", true, "Set to copy the image to all regions")
 var flagDown = flag.Bool("down", true, "Set to shut down instance (if found)")
+var flagAddTags = flag.String("addtags", "", "Comma-separated list of key=value pairs to be added as additional Tags")
 
 var flagLocalhost = flag.Bool("localhost", false, "Set to use local machine for execution")
 
@@ -310,6 +311,21 @@ func main() {
 	}
 }
 
+func splitAdditionalTags() map[string]string {
+	tags := make(map[string]string)
+	if *flagAddTags != "" {
+		for _, tagpair := range strings.Split(*flagAddTags, ",") {
+			trimmed := strings.TrimSpace(tagpair)
+			kv := strings.Split(trimmed, "=")
+			if len(kv) != 2 {
+				glog.Fatalf("addtags value malformed, should be key=value: %q", tagpair)
+			}
+			tags[kv[0]] = kv[1]
+		}
+	}
+	return tags
+}
+
 func initAWS(useLocalhost bool) (*imagebuilder.AWSConfig, *imagebuilder.AWSCloud, error) {
 	region := os.Getenv("AWS_REGION")
 	if region == "" {
@@ -324,6 +340,11 @@ func initAWS(useLocalhost bool) (*imagebuilder.AWSConfig, *imagebuilder.AWSCloud
 
 	if awsConfig.Region == "" {
 		glog.Exitf("Region must be set")
+	}
+
+	for key, value := range splitAdditionalTags() {
+		glog.Infof("Injecting additional tag: %q = %q", key, value)
+		awsConfig.Tags[key] = value
 	}
 
 	ec2Client := ec2.New(session.New(), &aws.Config{Region: &awsConfig.Region})

@@ -19,10 +19,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"golang.org/x/crypto/ssh"
 	"math/rand"
 	"time"
-
-	"golang.org/x/crypto/ssh"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -95,6 +94,11 @@ func main() {
 		glog.Exitf("Error loading config: %v", err)
 	}
 
+	for key, value := range splitAdditionalTags() {
+		glog.Infof("Injecting additional tag: %q = %q", key, value)
+		config.Tags[key] = value
+	}
+
 	var cloud imagebuilder.Cloud
 	switch config.Cloud {
 	case "aws":
@@ -102,6 +106,7 @@ func main() {
 		if err != nil {
 			glog.Exitf("%v", err)
 		}
+		awsConfig.Tags = config.Tags
 		templateContext = awsConfig
 		cloud = awsCloud
 
@@ -114,6 +119,7 @@ func main() {
 		if err != nil {
 			glog.Exitf("%v", err)
 		}
+		gceConfig.Tags = config.Tags
 		templateContext = gceConfig
 		cloud = gceCloud
 
@@ -340,11 +346,6 @@ func initAWS(useLocalhost bool) (*imagebuilder.AWSConfig, *imagebuilder.AWSCloud
 
 	if awsConfig.Region == "" {
 		glog.Exitf("Region must be set")
-	}
-
-	for key, value := range splitAdditionalTags() {
-		glog.Infof("Injecting additional tag: %q = %q", key, value)
-		awsConfig.Tags[key] = value
 	}
 
 	ec2Client := ec2.New(session.New(), &aws.Config{Region: &awsConfig.Region})

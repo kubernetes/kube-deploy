@@ -53,6 +53,7 @@ type AWSConfig struct {
 	SSHKeyName      string
 	SubnetID        string
 	SecurityGroupID string
+	Tags            map[string]string
 }
 
 func (c *AWSConfig) InitDefaults(region string) {
@@ -123,6 +124,7 @@ type GCEConfig struct {
 
 	MachineType string
 	Image       string
+	Tags        map[string]string
 }
 
 func (c *GCEConfig) InitDefaults() {

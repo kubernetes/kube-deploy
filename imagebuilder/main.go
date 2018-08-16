@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/url"
@@ -27,19 +28,12 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/crypto/ssh"
-
-	"io/ioutil"
-	"net/url"
-	"os"
-	"path"
-	"strings"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
+	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
@@ -67,6 +61,7 @@ var flagDown = flag.Bool("down", true, "Set to shut down instance (if found)")
 var flagAddTags = flag.String("addtags", "", "Comma-separated list of key=value pairs to be added as additional Tags")
 
 var flagLocalhost = flag.Bool("localhost", false, "Set to use local machine for execution")
+var flagLogdir = flag.String("logdir", "", "Set to preserve logs")
 
 func loadConfig(dest interface{}, src string) error {
 	data, err := ioutil.ReadFile(src)
@@ -246,7 +241,9 @@ func main() {
 			glog.Fatalf("error building environment: %v", err)
 		}
 
-		err = builder.BuildImage(bvzTemplate.Bytes(), extraEnv)
+		logdir := *flagLogdir
+
+		err = builder.BuildImage(bvzTemplate.Bytes(), extraEnv, logdir)
 		if err != nil {
 			glog.Fatalf("error building image: %v", err)
 		}

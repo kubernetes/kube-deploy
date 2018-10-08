@@ -50,6 +50,9 @@ packages:
     # Important utils for administration
     # if minbase - openssh-server
 
+    # Ensure systemd scripts run on shutdown
+    - acpi-support
+
     # these packages are generally useful
     # (and are the ones from the GCE image)
     - rsync

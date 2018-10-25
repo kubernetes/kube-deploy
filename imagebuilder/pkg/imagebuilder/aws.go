@@ -143,9 +143,17 @@ func (a *AWSCloud) GetExtraEnv() (map[string]string, error) {
 		return nil, fmt.Errorf("error fetching EC2 credentials: %v", err)
 	}
 
-	env["AWS_ACCESS_KEY_ID"] = creds.AccessKeyID
-	env["AWS_SECRET_ACCESS_KEY"] = creds.SecretAccessKey
-	env["AWS_SESSION_TOKEN"] = creds.SessionToken
+	// AWS session credentials should not be passed through if an IAM role has
+	// been specified for the instance; it's extremely unlikely to be what the
+	// user wants.
+	if a.config.InstanceProfile == "" {
+		env["AWS_ACCESS_KEY_ID"] = creds.AccessKeyID
+		env["AWS_SECRET_ACCESS_KEY"] = creds.SecretAccessKey
+		env["AWS_SESSION_TOKEN"] = creds.SessionToken
+		// Some apps use AWS_SESSION_TOKEN while others use AWS_SECURITY_TOKEN.
+		// The values are the same, so be nice to the user and present both.
+		env["AWS_SECURITY_TOKEN"] = creds.SessionToken
+	}
 
 	return env, nil
 }

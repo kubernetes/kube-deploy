@@ -37,7 +37,7 @@ func (c *Config) InitDefaults() {
 	setupCommands := []string{
 		"sudo apt-get update",
 		"sudo apt-get install --yes git python debootstrap python-pip kpartx parted",
-		"sudo pip install termcolor jsonschema fysom docopt pyyaml boto boto3",
+		"sudo pip install --upgrade requests termcolor jsonschema fysom docopt pyyaml boto boto3",
 	}
 	for _, cmd := range setupCommands {
 		c.SetupCommands = append(c.SetupCommands, strings.Split(cmd, " "))
@@ -71,35 +71,37 @@ func (c *AWSConfig) InitDefaults(region string) {
 		// A slightly older image, but the newest one we have
 		c.ImageID = "ami-da69a1b7"
 
-	// Debian 8.7 images from https://wiki.debian.org/Cloud/AmazonEC2Image/Jessie
+	// Debian 9.5 images from https://wiki.debian.org/Cloud/AmazonEC2Image/Stretch
 	case "ap-northeast-1":
-		c.ImageID = "ami-dbc0bcbc"
+		c.ImageID = "ami-048813c43a892bf4a"
 	case "ap-northeast-2":
-		c.ImageID = "ami-6d8b5a03"
+		c.ImageID = "ami-0b61dc7b9ac9452c7"
 	case "ap-south-1":
-		c.ImageID = "ami-9a83f5f5"
+		c.ImageID = "ami-02f59cc6982469cd2"
 	case "ap-southeast-1":
-		c.ImageID = "ami-0842e96b"
+		c.ImageID = "ami-0a9a79bb079115e9b"
 	case "ap-southeast-2":
-		c.ImageID = "ami-881317eb"
+		c.ImageID = "ami-0abf02e9015527575"
 	case "ca-central-1":
-		c.ImageID = "ami-a1fe43c5"
+		c.ImageID = "ami-0e825d093523065f9"
 	case "eu-central-1":
-		c.ImageID = "ami-5900cc36"
+		c.ImageID = "ami-0681ed9bb7a58a33d"
 	case "eu-west-1":
-		c.ImageID = "ami-402f1a33"
+		c.ImageID = "ami-0483f1cc1c483803f"
 	case "eu-west-2":
-		c.ImageID = "ami-87848ee3"
+		c.ImageID = "ami-0d9ba70fd9e495233"
+	case "eu-west-3":
+		c.ImageID = "ami-0b59b5cf392c3c2b3"
 	case "sa-east-1":
-		c.ImageID = "ami-b256ccde"
+		c.ImageID = "ami-0bd8e4655e2beef08"
 	case "us-east-1":
-		c.ImageID = "ami-b14ba7a7"
+		c.ImageID = "ami-03006931f694ea7eb"
 	case "us-east-2":
-		c.ImageID = "ami-b2795cd7"
+		c.ImageID = "ami-06dfb9abeb4a6afc6"
 	case "us-west-1":
-		c.ImageID = "ami-94bdeef4"
+		c.ImageID = "ami-0f0674cb683fcc1f7"
 	case "us-west-2":
-		c.ImageID = "ami-221ea342"
+		c.ImageID = "ami-0a1fbca0e5b419fd1"
 
 	default:
 		glog.Warningf("Building in unknown region %q - will require specifying an image, may not work correctly")

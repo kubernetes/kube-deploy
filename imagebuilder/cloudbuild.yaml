@@ -1,5 +1,5 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
-  args: [ 'build', '-t', 'gcr.io/oxalide-bumediapresse-sandbox/imagebuilder', '.' ]
+  args: [ 'build', '-t', 'gcr.io/$PROJECT_ID/imagebuilder', '.' ]
 images:
-- 'gcr.io/oxalide-bumediapresse-sandbox/imagebuilder'
+- 'gcr.io/$PROJECT_ID/imagebuilder'

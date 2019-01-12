@@ -1,0 +1,5 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '-t', 'gcr.io/oxalide-bumediapresse-sandbox/imagebuilder', '.' ]
+images:
+- 'gcr.io/oxalide-bumediapresse-sandbox/imagebuilder'

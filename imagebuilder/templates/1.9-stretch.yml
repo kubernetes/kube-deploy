@@ -170,6 +170,12 @@ plugins:
        # Remove machine-id, so that we regenerate next boot
        - [ 'chroot', '{root}', '/bin/sh', '-c', 'echo "" > /etc/machine-id' ]
 
+       # Ensure we have cleaned up all our SSH keys
+       - [ 'chroot', '{root}', 'bin/sh', '-c', 'shred --remove /etc/ssh/ssh_host_*_key' ]
+       - [ 'chroot', '{root}', 'bin/sh', '-c', 'shred --remove /etc/ssh/ssh_host_*_key.pub' ]
+       # Workaround bootstrap-vz bug where it errors if all keys are removed
+       - [ 'chroot', '{root}', 'bin/sh', '-c', 'touch /etc/ssh/ssh_host_rsa_key.pub' ]
+
        # journald requires machine-id, so add a PreStart
        - [ 'chroot', '{root}', 'mkdir', '-p', '/etc/systemd/system/debian-fixup.service.d/' ]
        - [ 'chroot', '{root}', '/bin/sh', '-c', 'echo "[Service]" > /etc/systemd/system/debian-fixup.service.d/10-machineid.conf' ]

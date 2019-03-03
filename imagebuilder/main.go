@@ -51,6 +51,7 @@ var flagConfig = flag.String("config", "", "Config file to load")
 //var flagSecurityGroup = flag.String("securitygroup", "", "Security group to use for launch")
 //var flagTemplatePath = flag.String("template", "", "Path to image template")
 
+var flagArch = flag.String("arch", "amd64", "Architecture to build AMI for (currently supported: amd64, arm64)")
 var flagUp = flag.Bool("up", true, "Set to create instance (if not found)")
 var flagBuild = flag.Bool("build", true, "Set to build image")
 var flagTag = flag.Bool("tag", true, "Set to tag image")
@@ -338,7 +339,7 @@ func initAWS(useLocalhost bool) (*imagebuilder.AWSConfig, *imagebuilder.AWSCloud
 		region = os.Getenv("AWS_DEFAULT_REGION")
 	}
 	awsConfig := &imagebuilder.AWSConfig{}
-	awsConfig.InitDefaults(region)
+	awsConfig.InitDefaults(*flagArch, region)
 	err := loadConfig(awsConfig, *flagConfig)
 	if err != nil {
 		glog.Exitf("Error loading AWS config: %v", err)

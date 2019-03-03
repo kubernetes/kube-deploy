@@ -123,6 +123,12 @@ configuration inputs. Some are specific to AWS or GCE.
 | `Tags`             | YAML map of cloud tags to be attached to the final cloud image                                    |
 | `TemplatePath`     | Path to `bootstrap-vz` template file, eg. `templates/1.11-stretch.yml`                            |
 
+ARM64 builds (work in progress)
+===============================
+
+Work is underway to support ARM64 on AWS. Pass the `--arch=arm64` option to try
+to build an AMI for ARM. This also requires modifications to `bootstrap-vz`.
+
 Advanced options
 ================
 

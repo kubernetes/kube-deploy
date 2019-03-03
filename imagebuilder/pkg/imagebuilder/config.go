@@ -37,7 +37,7 @@ func (c *Config) InitDefaults() {
 	setupCommands := []string{
 		"sudo apt-get update",
 		"sudo apt-get install --yes git python debootstrap python-pip kpartx parted",
-		"sudo pip install --upgrade requests termcolor jsonschema fysom docopt pyyaml boto boto3",
+		"sudo pip install --upgrade requests termcolor jsonschema fysom docopt pyyaml boto boto3 json_minify",
 	}
 	for _, cmd := range setupCommands {
 		c.SetupCommands = append(c.SetupCommands, strings.Split(cmd, " "))
@@ -47,6 +47,7 @@ func (c *Config) InitDefaults() {
 type AWSConfig struct {
 	Config
 
+	Arch            string
 	Region          string
 	ImageID         string
 	InstanceType    string
@@ -56,62 +57,24 @@ type AWSConfig struct {
 	Tags            map[string]string
 }
 
-func (c *AWSConfig) InitDefaults(region string) {
+func (c *AWSConfig) InitDefaults(arch, region string) {
 	c.Config.InitDefaults()
 	c.InstanceType = "m3.medium"
-
 	if region == "" {
 		region = "us-east-1"
 	}
-
 	c.Region = region
-	switch c.Region {
-	case "cn-north-1":
-		glog.Infof("Detected cn-north-1 region")
-		// A slightly older image, but the newest one we have
-		c.ImageID = "ami-da69a1b7"
-
-	// Debian 9.5 images from https://wiki.debian.org/Cloud/AmazonEC2Image/Stretch
-	case "ap-northeast-1":
-		c.ImageID = "ami-048813c43a892bf4a"
-	case "ap-northeast-2":
-		c.ImageID = "ami-0b61dc7b9ac9452c7"
-	case "ap-south-1":
-		c.ImageID = "ami-02f59cc6982469cd2"
-	case "ap-southeast-1":
-		c.ImageID = "ami-0a9a79bb079115e9b"
-	case "ap-southeast-2":
-		c.ImageID = "ami-0abf02e9015527575"
-	case "ca-central-1":
-		c.ImageID = "ami-0e825d093523065f9"
-	case "eu-central-1":
-		c.ImageID = "ami-0681ed9bb7a58a33d"
-	case "eu-west-1":
-		c.ImageID = "ami-0483f1cc1c483803f"
-	case "eu-west-2":
-		c.ImageID = "ami-0d9ba70fd9e495233"
-	case "eu-west-3":
-		c.ImageID = "ami-0b59b5cf392c3c2b3"
-	case "sa-east-1":
-		c.ImageID = "ami-0bd8e4655e2beef08"
-	case "us-east-1":
-		c.ImageID = "ami-03006931f694ea7eb"
-	case "us-east-2":
-		c.ImageID = "ami-06dfb9abeb4a6afc6"
-	case "us-west-1":
-		c.ImageID = "ami-0f0674cb683fcc1f7"
-	case "us-west-2":
-		c.ImageID = "ami-0a1fbca0e5b419fd1"
-
-	default:
-		glog.Warningf("Building in unknown region %q - will require specifying an image, may not work correctly")
+	if arch == "" {
+		arch = "amd64"
 	}
-
-	// Not all regions support m3.medium
-	switch c.Region {
-	case "us-east-2":
-		c.InstanceType = "m4.large"
+	c.Arch = arch
+	ami, err := chooseAWSImage(c.Arch, c.Region)
+	if err != nil {
+		glog.Warningf("No image known for this architecture (%q) and region (%q), please specify them explicitly: %v", c.Arch, c.Region, err)
+	} else {
+		c.ImageID = ami
 	}
+	c.InstanceType = chooseAWSInstanceType(c.Arch, c.Region)
 }
 
 type GCEConfig struct {

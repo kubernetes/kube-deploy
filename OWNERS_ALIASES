@@ -1,4 +1,4 @@
-# See the OWNERS docs: https://git.k8s.io/community/docs/devel/owners.md
+# See the OWNERS_ALIASES docs at https://go.k8s.io/owners#owners_aliases
 
 aliases:
   sig-cluster-lifecycle-leads:

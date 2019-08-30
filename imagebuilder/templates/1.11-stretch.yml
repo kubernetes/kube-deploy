@@ -68,6 +68,7 @@ packages:
     - htop
     - tcpdump
     - iotop
+    - ngrep
     - ethtool
     - sysstat
 
@@ -106,6 +107,7 @@ packages:
     - unattended-upgrades
     - lvm2
     - btrfs-tools
+    - dnsmasq
 
 {{ if eq .Cloud "aws" }}
     # So we can install the latest awscli
@@ -188,3 +190,11 @@ plugins:
        # From /usr/share/doc/systemd/README.Debian
        - [ 'chroot', '{root}', 'install', '-d', '-g', 'systemd-journal', '/var/log/journal' ]
        - [ 'chroot', '{root}', 'setfacl', '-R', '-nm', 'g:adm:rx,d:g:adm:rx', '/var/log/journal' ]
+
+       # Add loopback interface for dnsmasq
+       - [ 'wget', 'https://raw.githubusercontent.com/Oxalide/kops-ami-build-scripts/master/dnsmasq.sh', '-O', '{root}/tmp/dnsmasq.sh',  ]
+       #- [ 'chroot', '{root}', '/bin/sh', './image_config/dnsmasq.sh' ]
+
+         # Disable IPv6
+       - [ 'wget', 'https://raw.githubusercontent.com/Oxalide/kops-ami-build-scripts/master/disable-ipv6.sh', '-O', '{root}/tmp/disable-ipv6.sh',  ]
+       #- [ 'chroot', '{root}', '/bin/sh', './image_config/disable-ipv6.sh' ]

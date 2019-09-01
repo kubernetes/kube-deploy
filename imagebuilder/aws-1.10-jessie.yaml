@@ -7,5 +7,5 @@ Tags:
   k8s.io/distro: "debian"
   k8s.io/ssh-user: "admin"
 # Ensure the image is repeatable - really we should be locking to a tag
-BootstrapVZRepo: https://github.com/justinsb/bootstrap-vz.git
-BootstrapVZBranch: image18
+BootstrapVZRepo: https://github.com/oxa-test/bootstrap-vz.git
+BootstrapVZBranch: ec2_nvme-452

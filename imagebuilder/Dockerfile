@@ -1,8 +1,8 @@
-FROM golang:1.11 AS build
+FROM golang:1.12 AS build
 
 WORKDIR /go/src/k8s.io/kube-deploy/imagebuilder
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build
+RUN GO111MODULE=on CGO_ENABLED=0 GOOS=linux go build
 
 FROM alpine:3.8
 WORKDIR /imagebuilder

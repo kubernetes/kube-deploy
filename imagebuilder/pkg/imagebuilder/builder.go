@@ -54,6 +54,9 @@ func (b *Builder) BuildImage(template []byte, extraEnv map[string]string, logdir
 		return err
 	}
 
+
+	fmt.Print(string(template))
+
 	err = b.target.Put(tmpdir+"/template.yml", len(template), bytes.NewReader(template), 0644)
 	if err != nil {
 		return err

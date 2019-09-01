@@ -1,6 +1,9 @@
 ---
 {{ if eq .Cloud "aws" }}
 name: k8s-1.11-debian-{system.release}-{system.architecture}-{provider.virtualization}-ebs-{%Y}-{%m}-{%d}
+tags:
+  Name: "Stretch 9.5"
+  Debian: "9.5~{%Y}{%m}{%d}{%H}{%M}"
 {{ else }}
 name: k8s-1.11-debian-{system.release}-{system.architecture}-{%Y}-{%m}-{%d}
 {{ end }}
@@ -68,6 +71,7 @@ packages:
     - htop
     - tcpdump
     - iotop
+    - ngrep
     - ethtool
     - sysstat
 
@@ -82,6 +86,7 @@ packages:
     - lvm2
     - ncurses-term
     - parted
+    - linux-cpupower
     - cloud-init
     - cloud-utils
     - gdisk
@@ -160,7 +165,7 @@ plugins:
        - [ 'chroot', '{root}', 'sed', '-i', 's/^GRUB_CMDLINE_LINUX_DEFAULT=/#GRUB_CMDLINE_LINUX_DEFAULT=/g', '/etc/default/grub' ]
        - [ 'chroot', '{root}', 'sed', '-i', 's/^GRUB_TIMEOUT=/#GRUB_TIMEOUT=/g', '/etc/default/grub' ]
        - [ 'chroot', '{root}', '/bin/sh', '-c', 'echo "# kubernetes image changes" >> /etc/default/grub' ]
-       - [ 'chroot', '{root}', '/bin/sh', '-c', 'echo "GRUB_CMDLINE_LINUX_DEFAULT=\"cgroup_enable=memory oops=panic panic=10 console=ttyS0 nvme_core.io_timeout=255\"" >> /etc/default/grub' ]
+       - [ 'chroot', '{root}', '/bin/sh', '-c', 'echo "GRUB_CMDLINE_LINUX_DEFAULT=\"cgroup_enable=memory oops=panic panic=10 console=ttyS0 intel_idle.max_cstate=1 nvme_core.io_timeout=255\"" >> /etc/default/grub' ]
        - [ 'chroot', '{root}', '/bin/sh', '-c', 'echo "GRUB_TIMEOUT=0" >> /etc/default/grub' ]
        - [ 'chroot', '{root}', 'update-grub2' ]
 
@@ -189,6 +194,7 @@ plugins:
        # From /usr/share/doc/systemd/README.Debian
        - [ 'chroot', '{root}', 'install', '-d', '-g', 'systemd-journal', '/var/log/journal' ]
        - [ 'chroot', '{root}', 'setfacl', '-R', '-nm', 'g:adm:rx,d:g:adm:rx', '/var/log/journal' ]
+
        # Add loopback interface for dnsmasq
        - [ 'wget', 'https://raw.githubusercontent.com/Oxalide/kops-ami-build-scripts/master/dnsmasq.sh', '-O', '{root}/tmp/dnsmasq.sh',  ]
        #- [ 'chroot', '{root}', '/bin/sh', './image_config/dnsmasq.sh' ]
@@ -196,3 +202,8 @@ plugins:
          # Disable IPv6
        - [ 'wget', 'https://raw.githubusercontent.com/Oxalide/kops-ami-build-scripts/master/disable-ipv6.sh', '-O', '{root}/tmp/disable-ipv6.sh',  ]
        #- [ 'chroot', '{root}', '/bin/sh', './image_config/disable-ipv6.sh' ]
+
+       # Install CloudWatch Agent
+       - [ 'wget', 'https://s3.eu-central-1.amazonaws.com/amazoncloudwatch-agent-eu-central-1/debian/amd64/latest/amazon-cloudwatch-agent.deb', '-O', '{root}/tmp/amazon-cloudwatch-agent.deb',  ]
+       - [ 'chroot', '{root}', '/bin/sh', '-c', 'DEBIAN_FRONTEND=noninteractive dpkg --install /tmp/amazon-cloudwatch-agent.deb' ]
+       - [ 'rm', '{root}/tmp/amazon-cloudwatch-agent.deb' ]

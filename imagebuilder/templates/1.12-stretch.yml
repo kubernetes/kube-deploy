@@ -1,6 +1,9 @@
 ---
 {{ if eq .Cloud "aws" }}
 name: k8s-1.12-debian-{system.release}-{system.architecture}-{provider.virtualization}-ebs-{%Y}-{%m}-{%d}
+tags:
+  Name: "Stretch 9.5"
+  Debian: "9.5~{%Y}{%m}{%d}{%H}{%M}"
 {{ else }}
 name: k8s-1.12-debian-{system.release}-{system.architecture}-{%Y}-{%m}-{%d}
 {{ end }}
@@ -159,7 +162,7 @@ plugins:
        - [ 'chroot', '{root}', 'sed', '-i', 's/^GRUB_CMDLINE_LINUX_DEFAULT=/#GRUB_CMDLINE_LINUX_DEFAULT=/g', '/etc/default/grub' ]
        - [ 'chroot', '{root}', 'sed', '-i', 's/^GRUB_TIMEOUT=/#GRUB_TIMEOUT=/g', '/etc/default/grub' ]
        - [ 'chroot', '{root}', '/bin/sh', '-c', 'echo "# kubernetes image changes" >> /etc/default/grub' ]
-       - [ 'chroot', '{root}', '/bin/sh', '-c', 'echo "GRUB_CMDLINE_LINUX_DEFAULT=\"cgroup_enable=memory oops=panic panic=10 console=ttyS0 nvme_core.io_timeout=255\"" >> /etc/default/grub' ]
+       - [ 'chroot', '{root}', '/bin/sh', '-c', 'echo "GRUB_CMDLINE_LINUX_DEFAULT=\"cgroup_enable=memory oops=panic panic=10 console=ttyS0 intel_idle.max_cstate=1 nvme_core.io_timeout=255\"" >> /etc/default/grub' ]
        - [ 'chroot', '{root}', '/bin/sh', '-c', 'echo "GRUB_TIMEOUT=0" >> /etc/default/grub' ]
        - [ 'chroot', '{root}', 'update-grub2' ]
 

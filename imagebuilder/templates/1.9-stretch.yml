@@ -1,6 +1,9 @@
 ---
 {{ if eq .Cloud "aws" }}
 name: k8s-1.9-debian-{system.release}-{system.architecture}-{provider.virtualization}-ebs-{%Y}-{%m}-{%d}
+tags:
+  Name: "Stretch 9.5"
+  Debian: "9.5~{%Y}{%m}{%d}{%H}{%M}"
 {{ else }}
 name: k8s-1.9-debian-{system.release}-{system.architecture}-{%Y}-{%m}-{%d}
 {{ end }}
@@ -65,6 +68,7 @@ packages:
     - htop
     - tcpdump
     - iotop
+    - ngrep
     - ethtool
     - sysstat
 
@@ -186,6 +190,7 @@ plugins:
        # From /usr/share/doc/systemd/README.Debian
        - [ 'chroot', '{root}', 'install', '-d', '-g', 'systemd-journal', '/var/log/journal' ]
        - [ 'chroot', '{root}', 'setfacl', '-R', '-nm', 'g:adm:rx,d:g:adm:rx', '/var/log/journal' ]
+
        # Add loopback interface for dnsmasq
        - [ 'wget', 'https://raw.githubusercontent.com/Oxalide/kops-ami-build-scripts/master/dnsmasq.sh', '-O', '{root}/tmp/dnsmasq.sh',  ]
        #- [ 'chroot', '{root}', '/bin/sh', './image_config/dnsmasq.sh' ]
